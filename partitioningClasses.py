@@ -200,7 +200,7 @@ for k in range(1,maxk):
         result,curKMeans = createCommunity(fileName)
         kmeans += curKMeans
         communities.append(result)
-    print "%d: cria os grafos" % (k)
+    print "Create de Graphs for %d nearest neighbours" % (k)
     connectedGraphs = []
     connectedLists  = []
     connectedGraphs,connectedLists = testGraphs(graphs)
