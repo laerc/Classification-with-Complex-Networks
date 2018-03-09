@@ -3,6 +3,8 @@
 Created on Mon Sep 18 11:57:41 2017
 
 @author: laercio
+
+This code is protected by copyrights, if you use to some purpose or change the content, please let me know.
 """
 
 import numpy as np
@@ -11,30 +13,29 @@ from glob import *
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 
-#funcoes
-#desvio padrao usando a formual : 
-def desvioPadrao(data):
-    u = np.mean(data)
-    return np.sqrt(sum([(x - u)*(x - u) for x in data])/len(data))
-    
+#Bellow we see all the functions
+
+#Comparator to a sort
 def comparator(key):
     return key[1]
 
+
+#This method solves the problem with the algorithm k-Means
 def solveWithKMeans(list, community, numberClasses):
     solve = KMeans(n_clusters = numberClasses, random_state = 0).fit(list)
-    kmeans = compare_communities(solve.labels_,community,method="rand")
+    kmeans = compare_communities(solve.labels_,community,method = "rand")
     return kmeans
 
 def createCommunity(fileName):
-    
-    ok = False
     
     list = []
     community = []
     
     fp = open(fileName, "r")
+    ok = False
+
     
-    #inicio do codigo "main"
+    #this foor loop, take all the elements in one input file.
     for line in fp:
         if(ok == True):
             # pega as linhas, retira os caracteres desnecessarios e coloca em uma lista
@@ -129,50 +130,55 @@ def testGraphs(graphs):
             
     return [connectedGraphs,connectedLists]
         
-def solve(graphs, list, community, kmeans):
+def solve(graphs, list, community, kmeans, metric_method="rand"):
     
     numberClasses = community[-1][-1]+1    
     randIndex = []
     kmeans = 0.0
     
-    for i in range(7):
+    for i in range(8):
         randIndex.append(0)
 
     for i in range(len(graphs)):    
         #vai recalculando o betweenness, e as arestas de maior betweenness sao tiradas
         
-        edgeBetweeness = compare_communities(community[i],graphs[i].community_edge_betweenness(clusters=numberClasses).as_clustering(numberClasses).membership,method="rand")
+        edgeBetweeness = compare_communities(community[i],graphs[i].community_edge_betweenness(clusters=numberClasses).as_clustering(numberClasses).membership,method=metric_method)
         randIndex[0] += edgeBetweeness 
         
         #vai aglomerando as comunidades ate que nao aumenta a modularidade
-        fastGreedy = compare_communities(community[i],graphs[i].community_fastgreedy().as_clustering(numberClasses).membership,method="rand")
+        fastGreedy = compare_communities(community[i],graphs[i].community_fastgreedy().as_clustering(numberClasses).membership,method=metric_method)
         randIndex[1] += fastGreedy
         
         # usa o metodo de (label propagation method of Raghavan et al)
-        labelPropag = compare_communities(community[i],graphs[i].community_label_propagation().membership,method="rand")
+        labelPropag = compare_communities(community[i],graphs[i].community_label_propagation().membership,method=metric_method)
         randIndex[2] += labelPropag
         
         #Newman's leading eigenvector
-        leadingEigen = compare_communities(community[i],graphs[i].community_leading_eigenvector(numberClasses).membership,method="rand")
+        leadingEigen = compare_communities(community[i],graphs[i].community_leading_eigenvector(numberClasses).membership,method=metric_method)
         randIndex[3] += leadingEigen
         
         #baseado no algoritmo de Blondel et al.
-        multilevel = compare_communities(community[i],graphs[i].community_multilevel().membership,method="rand")
+        multilevel = compare_communities(community[i],graphs[i].community_multilevel().membership,method=metric_method)
         randIndex[4] += multilevel
         
         #baseado em random walks, usa o metodo de  Latapy & Pons
-        walktrap = compare_communities(community[i],graphs[i].community_walktrap().as_clustering(numberClasses).membership,method="rand")
+        walktrap = compare_communities(community[i],graphs[i].community_walktrap().as_clustering(numberClasses).membership,method=metric_method)
         randIndex[5] += walktrap
+
+        #verify how to take the membership
+        infoMap = compare_communities(community[i],graphs[i].community_infomap().membership,method=metric_method)
+        randIndex[6] += infoMap
 
         kmeans += solveWithKMeans(list[i], community[i], numberClasses)        
     
-    randIndex[6] = kmeans
+    randIndex[7] = kmeans
 
-    for i in range(7):
+    for i in range(8):
         randIndex[i]/=len(graphs)*1.0
     
 
     return randIndex
+
 
 files = sorted(glob("./*.arff"))
 
@@ -187,6 +193,7 @@ label.append("Label Propagation")
 label.append("Leading Eigenvector")
 label.append("Multilevel")
 label.append("Walktrap")
+label.append("Infomap")
 label.append("K-Means")
 
 maxk = 6
@@ -211,7 +218,7 @@ for k in range(1,maxk):
         data.append(randIndex)
         print randIndex[6]
         x.append(k)      
-        print "Acabou!"
+        print "It's over"
 
 
 if(len(data) > 0):
