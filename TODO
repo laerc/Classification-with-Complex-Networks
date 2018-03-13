@@ -1,5 +1,5 @@
  - Deixar o código mais limpo e modular
  - Fazer para um pouco dos que de para rodar, e mostrar que nao sao significativos os resultados.
  - [DONE] Incluir o algoritmo infomap
- - Analisar se os algoritmos de redes sao bons em prever o numero de grupos
+ - Analisar se os algoritmos de redes sao bons em prever o numero de grupos. (O que daria para ser feito é: ver se o número de grupos bate ou a taxa de acerto somente.)
  - Estudar novas medidas de clustering(NMI)
