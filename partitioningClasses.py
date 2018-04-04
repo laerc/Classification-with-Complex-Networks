@@ -183,18 +183,27 @@ def solve(graphs, list, community, kmeans, metric_method="rand"):
 files = sorted(glob("./*.arff"))
 
 label = []
+color = []
 data = []
 x = []
 kmeans = 0.0
 
 label.append("Edge Betweenness")
+color.append("blue")
 label.append("Fast Greedy")
+color.append("red")
 label.append("Label Propagation")
+color.append("green")
 label.append("Leading Eigenvector")
+color.append("purple")
 label.append("Multilevel")
+color.append("orange")
 label.append("Walktrap")
+color.append("black")
 label.append("Infomap")
+color.append("gray")
 label.append("K-Means")
+color.append("teal")
 
 maxk = 6
 
@@ -207,19 +216,21 @@ for k in range(1,maxk):
         result,curKMeans = createCommunity(fileName)
         kmeans += curKMeans
         communities.append(result)
-    print "Create de Graphs for %d nearest neighbours" % (k)
+    print "Created Graphs for %d nearest neighbours" % (k)
     connectedGraphs = []
     connectedLists  = []
     connectedGraphs,connectedLists = testGraphs(graphs)
     
     print len(connectedGraphs)
     if(len(connectedGraphs) >= 8):
-        randIndex = solve(connectedGraphs,connectedLists,communities,kmeans)
+        randIndex = solve(connectedGraphs,connectedLists,communities,kmeans,metric_method="rand") # use rand for rand index and nmi for nmi clustering evaluation
         data.append(randIndex)
         print randIndex[6]
         x.append(k)      
         print "It's over"
 
+
+plt.style.use('fivethirtyeight')
 
 if(len(data) > 0):
     for i in range(len(data[0])):
@@ -229,10 +240,11 @@ if(len(data) > 0):
             y.append(data[j][i])
         print label[i]
         print y
-        plt.plot(x,y,label=label[i])
+        plt.plot(x,y,label=label[i],color=color[i])
 
     plt.xlabel("k")
     plt.ylabel("Rand Index(k)")
-    plt.ylim(ymax=1.1)
-    plt.legend()
+    plt.ylim(ymax=1.0)
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.tight_layout(rect=[0,0,0.75,1])
     plt.show()

@@ -6,5 +6,6 @@
  - Implementar o consenso https://www.nature.com/articles/srep00336
  - método tradicional de IA EM(expectation maximization)
  - Deixar os gráficos mais bonitos e a legenda fora do figura.
+ 	* https://stories.thinkingmachin.es/matplotlib_tutorial/
  - Rodar somente o k-means para separar os casos(faceis e dificeis), os que tem 100% no k-means pode tirar, está muito fácil.
  - Gráfico das performance de cada dataset.
