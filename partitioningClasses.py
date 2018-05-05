@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Sep 18 11:57:41 2017
-
 @author: laercio
-
-This code is protected by copyrights, if you use to some purpose or change the content, please let me know.
 """
 
 import numpy as np
@@ -13,28 +10,21 @@ from glob import *
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 
-#Bellow we see all the functions
+#Below we see all the functions
 
 #Comparator to a sort
 def comparator(key):
     return key[1]
 
-
-#This method solves the problem with the algorithm k-Means
-def solveWithKMeans(list, community, numberClasses):
-    solve = KMeans(n_clusters = numberClasses, random_state = 0).fit(list)
-    kmeans = compare_communities(solve.labels_,community,method = "rand")
-    return kmeans
-
-def createCommunity(fileName):
+def parseData(fileName):
     
     list = []
+    listKMeans = []
     community = []
     
     fp = open(fileName, "r")
     ok = False
 
-    
     #this foor loop, take all the elements in one input file.
     for line in fp:
         if(ok == True):
@@ -55,11 +45,9 @@ def createCommunity(fileName):
 
     #deixa a classe de cada elemento sendo um valor inteiro
     for i in range(len(list)):
-         community.append(int(list[i][numberFeatures]))
-    
-    kmeans = solveWithKMeans(list, community, numberClasses)
+        community.append(int(list[i][numberFeatures]))
 
-    return [community,kmeans]
+    return [community,list]
     
 
 def createGraph(fileName, k):
@@ -92,7 +80,7 @@ def createGraph(fileName, k):
     
     #deixa a classe de cada elemento sendo um valor inteiro
     for i in range(len(list)):
-        list[i][numberFeatures-1] = int(list[i][numberFeatures-1])
+        list[i][numberFeatures] = int(list[i][numberFeatures])
    
     #calcula a distancia euclidiana dos pontos e monta uma lista
     for i in range(len(list)):
@@ -130,121 +118,79 @@ def testGraphs(graphs):
             
     return [connectedGraphs,connectedLists]
         
-def solve(graphs, list, community, kmeans, metric_method="rand"):
+def solveGraphs(entries, graphs, community, metric_method):
     
     numberClasses = community[-1][-1]+1    
-    randIndex = []
-    kmeans = 0.0
+    ret = {}
     
-    for i in range(8):
-        randIndex.append(0)
+    for x in entries:
+        ret[x] = 0.0
 
     for i in range(len(graphs)):    
-        #vai recalculando o betweenness, e as arestas de maior betweenness sao tiradas
-        
-        edgeBetweeness = compare_communities(community[i],graphs[i].community_edge_betweenness(clusters=numberClasses).as_clustering(numberClasses).membership,method=metric_method)
-        randIndex[0] += edgeBetweeness 
-        
-        #vai aglomerando as comunidades ate que nao aumenta a modularidade
-        fastGreedy = compare_communities(community[i],graphs[i].community_fastgreedy().as_clustering(numberClasses).membership,method=metric_method)
-        randIndex[1] += fastGreedy
-        
-        # usa o metodo de (label propagation method of Raghavan et al)
-        labelPropag = compare_communities(community[i],graphs[i].community_label_propagation().membership,method=metric_method)
-        randIndex[2] += labelPropag
-        
-        #Newman's leading eigenvector
-        leadingEigen = compare_communities(community[i],graphs[i].community_leading_eigenvector(numberClasses).membership,method=metric_method)
-        randIndex[3] += leadingEigen
-        
-        #baseado no algoritmo de Blondel et al.
-        multilevel = compare_communities(community[i],graphs[i].community_multilevel().membership,method=metric_method)
-        randIndex[4] += multilevel
-        
-        #baseado em random walks, usa o metodo de  Latapy & Pons
-        walktrap = compare_communities(community[i],graphs[i].community_walktrap().as_clustering(numberClasses).membership,method=metric_method)
-        randIndex[5] += walktrap
+        if entries['edgeBetweeness'] == True:
+            #vai recalculando o betweenness, e as arestas de maior betweenness sao tiradas
+            edgeBetweeness = compare_communities(community[i],graphs[i].community_edge_betweenness(clusters=numberClasses).as_clustering(numberClasses).membership,method=metric_method)
+            ret['edgeBetweeness'] += edgeBetweeness 
 
-        #verify how to take the membership
-        infoMap = compare_communities(community[i],graphs[i].community_infomap().membership,method=metric_method)
-        randIndex[6] += infoMap
+        if entries['fastGreedy'] == True:
+            #vai aglomerando as comunidades ate que nao aumenta a modularidade
+            fastGreedy = compare_communities(community[i],graphs[i].community_fastgreedy().as_clustering(numberClasses).membership,method=metric_method)
+            ret['fastGreedy'] += fastGreedy
+        
+        if entries['labelPropag'] == True:
+            # usa o metodo de (label propagation method of Raghavan et al)
+            labelPropag = compare_communities(community[i],graphs[i].community_label_propagation().membership,method=metric_method)
+            ret['labelPropag'] += labelPropag
+            
+        if entries['leadingEigen'] == True:
+            #Newman's leading eigenvector
+            leadingEigen = compare_communities(community[i],graphs[i].community_leading_eigenvector(numberClasses).membership,method=metric_method)
+            ret['leadingEigen'] += leadingEigen
+            
+        if entries['multilevel'] == True:    
+            #baseado no algoritmo de Blondel et al.
+            multilevel = compare_communities(community[i],graphs[i].community_multilevel().membership,method=metric_method)
+            ret['multilevel'] += multilevel
+            
+        if entries['walktrap'] == True:
+            #baseado em random walks, usa o metodo de  Latapy & Pons
+            walktrap = compare_communities(community[i],graphs[i].community_walktrap().as_clustering(numberClasses).membership,method=metric_method)
+            ret['walktrap'] += walktrap
 
-        kmeans += solveWithKMeans(list[i], community[i], numberClasses)        
+        if entries['infoMap'] == True:
+            #verify how to take the membership
+            infoMap = compare_communities(community[i],graphs[i].community_infomap().membership,method=metric_method)
+            ret['infoMap'] += infoMap  
+
+    for i in entries:
+        if(entries[i] == True):
+            ret[i]/=len(graphs)*1.0
     
-    randIndex[7] = kmeans
 
-    for i in range(8):
-        randIndex[i]/=len(graphs)*1.0
+    return ret
+
+def solveIAMethods(list, community, methods):
     
+    ret = []
+    listKMeans = []
 
-    return randIndex
+    numberClasses = community[-1][-1]+1    
+
+    for i in range(len(methods)):
+        ret.append(0.0)
+
+    for i in range(len(list)):
+        for j in range(len(methods)):
+            ret[j]+=solveWithKMeans(list[i], community[i], numberClasses, methods[j])
+
+    return ret
 
 
-files = sorted(glob("./*.arff"))
-
-label = []
-color = []
-data = []
-x = []
-kmeans = 0.0
-
-label.append("Edge Betweenness")
-color.append("blue")
-label.append("Fast Greedy")
-color.append("red")
-label.append("Label Propagation")
-color.append("green")
-label.append("Leading Eigenvector")
-color.append("purple")
-label.append("Multilevel")
-color.append("orange")
-label.append("Walktrap")
-color.append("black")
-label.append("Infomap")
-color.append("gray")
-label.append("K-Means")
-color.append("teal")
-
-maxk = 6
-
-for k in range(1,maxk):
-    communities = []
-    graphs = []    
-    kmeans = 0.0
-    for fileName in files:
-        graphs.append(createGraph(fileName,k))
-        result,curKMeans = createCommunity(fileName)
-        kmeans += curKMeans
-        communities.append(result)
-    print "Created Graphs for %d nearest neighbours" % (k)
-    connectedGraphs = []
-    connectedLists  = []
-    connectedGraphs,connectedLists = testGraphs(graphs)
+#This method solves the problem with the algorithm k-Means
+def solveWithKMeans(list, community, numberClasses, method):
+    #print len(list[0]), len(community), numberClasses, method
     
-    print len(connectedGraphs)
-    if(len(connectedGraphs) >= 8):
-        randIndex = solve(connectedGraphs,connectedLists,communities,kmeans,metric_method="rand") # use rand for rand index and nmi for nmi clustering evaluation
-        data.append(randIndex)
-        print randIndex[6]
-        x.append(k)      
-        print "It's over"
-
-
-plt.style.use('fivethirtyeight')
-
-if(len(data) > 0):
-    for i in range(len(data[0])):
-        y = []
-        
-        for j in range(len(data)):
-            y.append(data[j][i])
-        print label[i]
-        print y
-        plt.plot(x,y,label=label[i],color=color[i])
-
-    plt.xlabel("k")
-    plt.ylabel("Rand Index(k)")
-    plt.ylim(ymax=1.0)
-    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    plt.tight_layout(rect=[0,0,0.75,1])
-    plt.show()
+    solve = KMeans(n_clusters = numberClasses, random_state = 0).fit(list)
+    kmeansTmp = compare_communities(solve.labels_,community,method = method)
+    
+    return kmeansTmp
