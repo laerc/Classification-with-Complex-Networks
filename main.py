@@ -9,44 +9,51 @@ from partitioningClasses import *
 def main(files):
 
     data = []
-    label = []
-    color = []
+    label = {}
+    color = {}
     entries = {}
     x = []
+    y = {}
     kmeans = 0.0
 
-    maxk = 9
-    method = "rand"
+    maxk = 7
+    method = "nmi"
+    np = 6
+    tol = 0.2
 
-    label.append("Edge Betweenness")
-    color.append("blue")
-    label.append("Fast Greedy")
-    color.append("red")
-    label.append("Label Propagation")
-    color.append("green")
-    label.append("Leading Eigenvector")
-    color.append("purple")
-    label.append("Multilevel")
-    color.append("orange")
-    label.append("Walktrap")
-    color.append("black")
-    label.append("Infomap")
-    color.append("gray")
-    label.append("K-Means")
-    color.append("teal")
+    color['edgeBetweeness'] = "blue"
+    color['fastGreedy'] = "red"
+    color['labelPropag'] = "green"
+    color['leadingEigen'] = "purple"
+    color['multilevel'] = "orange"
+    color['walktrap'] = "black"
+    color['infoMap'] = "grey"
+    color['kmeans'] = "teal"
 
-    entries['edgeBetweeness'] = False
-    entries['fastGreedy'] = False
-    entries['labelPropag'] = False
-    entries['leadingEigen'] = False
-    entries['multilevel'] = False
-    entries['walktrap'] = False
-    entries['infoMap'] = False
+    label['edgeBetweeness'] = "Edge Betweenness"
+    label['fastGreedy'] = "Fast Greedy"
+    label['labelPropag'] = "Label Propagation"
+    label['leadingEigen'] = "Leading Eigenvector"
+    label['multilevel'] = "Multilevel"
+    label['walktrap'] = "Walktrap"
+    label['infoMap'] = "Infomap"
+    label['kmeans'] = "K-Means"
+
+    entries['edgeBetweeness'] = True
+    entries['fastGreedy'] = True
+    entries['labelPropag'] = True
+    entries['leadingEigen'] = True
+    entries['multilevel'] = True
+    entries['walktrap'] = True
+    entries['infoMap'] = True
     entries['kmeans'] = True
+
+    y  = {'edgeBetweeness' : [], 'fastGreedy' : [], 'labelPropag' : [], 'leadingEigen' : [],
+          'multilevel' : [], 'walktrap' : [], 'infoMap' : [], 'kmeans' : []}
 
     print ("Executing these files : %s" % (files))
 
-    for k in range(1,maxk):
+    for k in range(2,maxk):
         communities = []
         graphs = []    
         kmeans = 0.0
@@ -62,39 +69,39 @@ def main(files):
         if(len(connectedGraphs) >= 8):
             # use rand for rand index and nmi for nmi clustering evaluation
             ret = solveGraphs(entries, connectedGraphs, communities, metric_method=method)
-            #kmeans = solveIAMethods(connectedLists, communities, metric_method=method) 
-            data.append(ret)
+            kmeans = solveIAMethods(connectedLists, communities, methods=[method]) 
+            consensus(entries, connectedGraphs, communities, method, np, tol)
+
+            ret['kmeans'] = kmeans[0]/len(connectedLists)
+            return
+            for key, value in ret.iteritems():
+                y[key].append(value)
+            
             x.append(k)      
-
-    print kmeans, files[0]
-
-    '''
+    
     plt.style.use('fivethirtyeight')
 
-    for i in range(len(data[0])):
-        y = []
-        
-        for j in range(len(data)):
-            y.append(data[j][i])
-        plt.plot(x,y,label=label[i],color=color[i])
+    for key, val in y.iteritems():
+        plt.plot(x,val,label=label[key],color=color[key])
 
     plt.xlabel("k")
-    plt.ylabel("Rand Index(k)")
+    plt.ylabel("%s(k)" % method)
     plt.ylim(ymax=1.0)
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.tight_layout(rect=[0,0,0.75,1])
     plt.show()
-    '''
 
 def EvaluateKMeans(files, methods):
-	numFiles = 0
+    numFiles = 0
 
-	kmeans = []
-	dataList = []
-	communityList = []
+    kmeans = []
+    dataList = []
+    communityList = []
 
-	for i in range(len(methods)):
-		kmeans.append(0.0)
+    print ("File name              NMI     Rand Index")
+
+    for i in range(len(methods)):
+        kmeans.append(0.0)
 
 	for file in files:
 		
@@ -121,8 +128,6 @@ def EvaluateKMeans(files, methods):
 
 files = sorted(glob("./*.arff"))
 
-print ("File name 				NMI 	Rand Index")
+#EvaluateKMeans(files,["nmi", "rand"])
 
-EvaluateKMeans(files,["nmi", "rand"])
-
-#main(files)
+main(files)

@@ -1,12 +1,12 @@
- - Deixar o código mais limpo e modular
+ - [DOING] Deixar o código mais limpo e modular
  - Fazer para um pouco dos que de para rodar, e mostrar que nao sao significativos os resultados.
  - [DONE] Incluir o algoritmo infomap
  - Analisar se os algoritmos de redes sao bons em prever o numero de grupos. Testar a modularidade(iterar nos numeros de grupos).
- - Estudar novas medidas de clustering(NMI)
+ - [DONE]Estudar novas medidas de clustering(NMI)
  	* https://course.ccs.neu.edu/cs6140sp15/7_locality_cluster/Assignment-6/NMI.pdf
  - Implementar o consenso https://www.nature.com/articles/srep00336
  - método tradicional de IA EM(expectation maximization)
  - Deixar os gráficos mais bonitos e a legenda fora do figura.
  	* https://stories.thinkingmachin.es/matplotlib_tutorial/
- - Rodar somente o k-means para separar os casos(faceis e dificeis), os que tem 100% no k-means pode tirar, está muito fácil.
+ - [DONE] Rodar somente o k-means para separar os casos(faceis e dificeis), os que tem 100% no k-means pode tirar, está muito fácil.
  - Gráfico das performance de cada dataset.
