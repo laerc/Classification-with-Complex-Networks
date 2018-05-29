@@ -8,7 +8,9 @@ import numpy as np
 from igraph import *
 from glob import *
 from sklearn.cluster import KMeans
+from sets import Set
 import matplotlib.pyplot as plt
+
 
 from igraph import arpack_options
 
@@ -122,56 +124,156 @@ def testGraphs(graphs):
         
 def solveGraphs(entries, graphs, community, metric_method):
     
-    numberClasses = community[-1][-1]+1    
-    ret = {}
-    
-    for x in entries:
-        ret[x] = 0.0
+    numberClasses = community[-1][-1]+1   
+
+    ret = ({'edgeBetweeness' : [], 'fastGreedy' : [], 'labelPropag' : [], 'leadingEigen' : [],
+            'multilevel' : [], 'walktrap' : [], 'infoMap' : []})
 
     for i in range(len(graphs)):    
         if entries['edgeBetweeness'] == True:
             #vai recalculando o betweenness, e as arestas de maior betweenness sao tiradas
             edgeBetweeness = compare_communities(community[i],graphs[i].community_edge_betweenness(clusters=numberClasses).as_clustering(numberClasses).membership,method=metric_method)
-            ret['edgeBetweeness'] += edgeBetweeness 
+            ret['edgeBetweeness'].append(edgeBetweeness)
 
         if entries['fastGreedy'] == True:
             #vai aglomerando as comunidades ate que nao aumenta a modularidade
             fastGreedy = compare_communities(community[i],graphs[i].community_fastgreedy().as_clustering(numberClasses).membership,method=metric_method)
-            ret['fastGreedy'] += fastGreedy
+            ret['fastGreedy'].append(fastGreedy)
         
         if entries['labelPropag'] == True:
             # usa o metodo de (label propagation method of Raghavan et al)
             labelPropag = compare_communities(community[i],graphs[i].community_label_propagation().membership,method=metric_method)
-            ret['labelPropag'] += labelPropag
+            ret['labelPropag'].append(labelPropag)
             
         if entries['leadingEigen'] == True:
             #Newman's leading eigenvector
             arpack_options.maxiter=3000
             leadingEigen = compare_communities(community[i],graphs[i].community_leading_eigenvector(numberClasses).membership,method=metric_method)
-            ret['leadingEigen'] += leadingEigen
+            ret['leadingEigen'].append(leadingEigen)
             
         if entries['multilevel'] == True:    
             #baseado no algoritmo de Blondel et al.
             multilevel = compare_communities(community[i],graphs[i].community_multilevel().membership,method=metric_method)
-            ret['multilevel'] += multilevel
+            ret['multilevel'].append(multilevel)
             
         if entries['walktrap'] == True:
             #baseado em random walks, usa o metodo de  Latapy & Pons
             walktrap = compare_communities(community[i],graphs[i].community_walktrap().as_clustering(numberClasses).membership,method=metric_method)
-            ret['walktrap'] += walktrap
+            ret['walktrap'].append(walktrap)
 
         if entries['infoMap'] == True:
             #verify how to take the membership
             infoMap = compare_communities(community[i],graphs[i].community_infomap().membership,method=metric_method)
-            ret['infoMap'] += infoMap  
+            ret['infoMap'].append(infoMap)  
 
-    for i in entries:
-        if(entries[i] == True):
-            ret[i]/=len(graphs)*1.0
-    
+        layout = graphs[i].layout("kk")
+        plot(graphs[i], mark_groups = True, layout=layout)
+        plot(graphs[i].community_fastgreedy().as_clustering(numberClasses), mark_groups = True, layout=layout)
+        return 
+
+        #layout = graphs[i].layout("kk")
+        #plot(graphs[i], layout = layout)
+        #return
 
     return ret
 
+def createConsensusGraphsWeighted(clusters, size, threshold, np):
+    
+    seen_before = Set()
+    adj_mat = [[0 for ii in range(size)] for jj in range(size)]
+    
+    #print adj_mat
+
+    for key_i, val_i in clusters.iteritems():
+        seen_before.add(key_i)
+        for key_j, val_j in clusters.iteritems():
+            if(key_j in seen_before): 
+                continue
+            
+            for i in range(size):
+                for j in range(i+1,size):
+                    #print (val_i[0][i], val_j[0][j])
+                    if val_i[0][i] == val_j[0][j]:
+                        adj_mat[i][j] += 1
+
+    #create a new graph
+    #graph = Graph.Weighted_Adjacency(adj_mat,attr="weight",mode=ADJ_UNDIRECTED)
+    #graph.add_vertices(size)
+    #graph.es["weight"] = 1.0
+
+    #for i in range(size):
+    #    for j in range(i+1,size):
+    #        if(adj_mat[i][j] >= threshold*size):
+    #            graph.add_edge(i,j,weight=adj_mat[i][j])
+                #print (graph[i,j])
+
+    #print size
+    #graph.simplify()
+    return adj_mat
+
+def solveWithConsensus(graphs, communities, metric_method, threshold, np):
+    numberClasses = communities[-1][-1]+1
+    result = 0.0    
+
+    for i in range(len(graphs)):
+        ok = False
+        k = 0
+        j = 0
+        graphs[i].es["weight"] = 1.0
+        print graphs[i].es["weight"]
+        while(ok == False):
+            ok = True
+            ret = []    
+            j+=1
+            ret.append({'edgeBetweeness' : [], 'fastGreedy' : [], 'labelPropag' : [], 'leadingEigen' : [],
+            'multilevel' : [], 'walktrap' : [], 'infoMap' : []})
+            # usa o metodo de (label propagation method of Raghavan et al)
+            
+            labelPropag = graphs[i].community_label_propagation(weights="weight").membership
+            ret[k]['labelPropag'].append(labelPropag)
+            
+            #Newman's leading eigenvector
+            leadingEigen = graphs[i].community_leading_eigenvector(weights="weight",clusters=numberClasses).membership
+            ret[k]['leadingEigen'].append(leadingEigen)
+            
+            #baseado no algoritmo de Blondel et al.
+            multilevel = graphs[i].community_multilevel(weights="weight").membership
+            ret[k]['multilevel'].append(multilevel)
+            
+            #baseado em random walks, usa o metodo de  Latapy & Pons
+            walktrap = graphs[i].community_walktrap(weights="weight").as_clustering(numberClasses).membership
+            ret[k]['walktrap'].append(walktrap)
+
+            #verify how to take the membership
+            infoMap = graphs[i].community_infomap(edge_weights="weight").membership
+            ret[k]['infoMap'].append(infoMap)
+
+            #vai recalculando o betweenness, e as arestas de maior betweenness sao tiradas
+            edgeBetweeness = graphs[i].community_edge_betweenness(weights="weight",clusters=numberClasses).as_clustering(numberClasses).membership
+            ret[k]['edgeBetweeness'].append(edgeBetweeness)
+
+            #vai aglomerando as comunidades ate que nao aumenta a modularidade
+            fastGreedy = graphs[i].community_fastgreedy(weights="weight").as_clustering(numberClasses).membership
+            ret[k]['fastGreedy'].append(fastGreedy)
+
+            for key_i, val_i in ret[k].iteritems():
+                for key_j, val_j in ret[k].iteritems():
+                    if(compare_communities(val_i[0], val_j[0], method = metric_method) < threshold):
+                        #print val_i[0], val_j[0]
+                        ok = False
+                        break
+
+            #They differ from at least one
+            if(ok == False):
+                adj_mat = createConsensusGraphsWeighted(ret[k], len(communities), threshold, np)
+                graphs[i] = Graph.Weighted_Adjacency(adj_mat,mode=ADJ_UNDIRECTED)
+                print graphs[i].get_edgelist()
+            #They are all equal
+            else:
+                result += compare_communities(ret[k]['edgeBetweeness'][0], communities[i], method = metric_method)
+        print j
+
+    return result/len(graphs)*1.0
 
 def createConsensusGraphs(clusters, threshold, np):
     D = {}
