@@ -7,6 +7,7 @@ from igraph import *
 from partitioningClasses import *
 from sklearn.cluster import KMeans
 
+import cv2 as cv
 
 def EvaluateKMeans(files, methods):
     numFiles = 0
@@ -208,7 +209,7 @@ def main(files):
     color['walktrap'] = "black"
     color['infoMap'] = "grey"
     color['kmeans'] = "teal"
-    color['consensus'] = "indigo"
+    color['EM'] = "indigo"
 
     label['edgeBetweeness'] = "Edge Betweenness"
     label['fastGreedy'] = "Fast Greedy"
@@ -218,7 +219,7 @@ def main(files):
     label['walktrap'] = "Walktrap"
     label['infoMap'] = "Infomap"
     label['kmeans'] = "K-Means"
-    label['consensus'] = "Consensus"
+    label['EM'] = "Expectation-Maximization"
 
     entries['edgeBetweeness'] = True
     entries['fastGreedy'] = True
@@ -228,13 +229,14 @@ def main(files):
     entries['walktrap'] = True
     entries['infoMap'] = True
     entries['kmeans'] = True
+    entries['EM'] = True
     y = {}
     
     y['nmi'] = {'edgeBetweeness' : [], 'fastGreedy' : [], 'labelPropag' : [], 'leadingEigen' : [],
-          'multilevel' : [], 'walktrap' : [], 'infoMap' : [], 'kmeans' : []}#, 'consensus' : []}
+          'multilevel' : [], 'walktrap' : [], 'infoMap' : [], 'kmeans' : [], 'EM' : []}#, 'consensus' : []}
 
     y['rand'] = {'edgeBetweeness' : [], 'fastGreedy' : [], 'labelPropag' : [], 'leadingEigen' : [],
-          'multilevel' : [], 'walktrap' : [], 'infoMap' : [], 'kmeans' : []}#, 'consensus' : []}
+          'multilevel' : [], 'walktrap' : [], 'infoMap' : [], 'kmeans' : [], 'EM' : []}#, 'consensus' : []}
 
     #print ("Executing these files : %s" % (files))
 
@@ -263,20 +265,19 @@ def main(files):
             # use rand for rand index and nmi for nmi clustering evaluation
             cur_val_nmi = 0.0
             cur_val_rand = 0.0
-            '''
+
+            ai_methods = solveIAMethods(connectedLists, communities, methods=['nmi', 'rand'])
             ret = solveGraphs(entries, connectedGraphs, communities, metric_method=method)
-            kmeans = solveIAMethods(connectedLists, communities, methods=['nmi', 'rand']) 
-            
-            y['nmi']['kmeans'].append(kmeans[0]/len(connectedLists))
-            y['rand']['kmeans'].append(kmeans[1]/len(connectedLists))
-            '''
-            #print (kmeans[0]/len(connectedLists))
-            print "\n--------------------------------------------------------\n"
+
+            for key_method, value_method in ai_methods.iteritems():
+                for key_algo, value_algo in value_method.iteritems():
+                    y[key_method][key_algo].append(value_algo/len(connectedLists))
+
+            '''print "\n--------------------------------------------------------\n"
             print k 
             ret_consensus = solveWithConsensus(connectedGraphs, communities, method, tol, np)
-            #y['consensus'].append(ret_consensus)
             print "\n--------------------------------------------------------\n"
-            continue
+            '''
 
             best_performance_nmi.update({k : ret['nmi']})
             best_performance_rand.update({k : ret['rand']})
@@ -295,17 +296,17 @@ def main(files):
                 break
             maxi_eval_nmi = max(maxi_eval_nmi,cur_val_nmi)
             maxi_eval_rand = max(maxi_eval_rand,cur_val_rand)
-                  
-    return 
+
+
     ranks = findBestRank(best_performance_nmi)
-    #plotRank(ranks, "NMI")
-    print ("NMI")
+    plotRank(ranks, "NMI")
+    '''print ("NMI")
     print (ranks)
     print "\n"
-
+    '''
     ranks = findBestRank(best_performance_rand)
-    #plotRank(ranks, "Rand Index")
-    print ("Rand Index")
+    plotRank(ranks, "Rand Index")
+    '''print ("Rand Index")
     print (ranks)
     print "\n"
     print x
@@ -313,8 +314,8 @@ def main(files):
     print y
     print "\n"
     print "------------------------------------------------------\n\n"
-
     '''
+    
     plt.style.use('fivethirtyeight')
 
     for key, val in y['nmi'].iteritems():
@@ -336,7 +337,7 @@ def main(files):
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.tight_layout(rect=[0,0,0.75,1])
     plt.show()
-    '''
+    
 
 files = sorted(glob("./*.arff"))
 

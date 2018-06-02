@@ -4,15 +4,17 @@ Created on Mon Sep 18 11:57:41 2017
 @author: laercio
 """
 
-import numpy as np
-from igraph import *
 from glob import *
-from sklearn.cluster import KMeans
-from sets import Set
-import matplotlib.pyplot as plt
+from igraph import *
 
+from sets import Set
 
 from igraph import arpack_options
+from sklearn.cluster import KMeans
+
+import cv2 as cv
+import numpy as np
+import matplotlib.pyplot as plt
 
 #Below we see all the functions
 
@@ -330,7 +332,7 @@ def solveWithConsensus(graphs, communities, metric_method, threshold, np):
                 result += compare_communities(ret[k]['walktrap'][0], communities[i], method = metric_method)
             
         #print j
-        
+
     print best_result
 
     return result/len(graphs)*1.0
@@ -473,20 +475,19 @@ def consensusSolved(allequal):
 
 def solveIAMethods(list, community, methods):
     
-    ret = []
-    listKMeans = []
+    ret = {"nmi" : {}, "rand" : {}}
+    ret["nmi"]  = {"kmeans" : 0.0, "EM" : 0.0}
+    ret["rand"] = {"kmeans" : 0.0, "EM" : 0.0}
 
     numberClasses = community[-1][-1]+1    
 
-    for i in range(len(methods)):
-        ret.append(0.0)
 
     for i in range(len(list)):
-        for j in range(len(methods)):
-            ret[j]+=solveWithKMeans(list[i], community[i], numberClasses, methods[j])
-
+        for key_method, _ in ret.iteritems():
+            ret[key_method]["kmeans"] += solveWithKMeans(list[i], community[i], numberClasses, key_method)
+            ret[key_method]["EM"]     += solveWithEM    (list[i], community[i], numberClasses, key_method)
+            
     return ret
-
 
 #This method solves the problem with the algorithm k-Means
 def solveWithKMeans(list, community, numberClasses, method):
@@ -495,3 +496,12 @@ def solveWithKMeans(list, community, numberClasses, method):
     kmeansTmp = compare_communities(solve.labels_,community,method = method)
     
     return kmeansTmp
+
+def solveWithEM(list, community, numberClasses, method):
+    
+    em = cv.ml.EM_create()
+    em.setClustersNumber(numberClasses)
+    _,_,clusters,_ = em.trainEM(np.asarray(list))
+    em_eval = compare_communities([elem[0] for elem in clusters.tolist()], community, method=method)
+
+    return em_eval
