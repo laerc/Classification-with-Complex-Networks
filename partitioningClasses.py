@@ -305,8 +305,8 @@ def solveWithConsensus(graphs, communities, metric_method, threshold, np):
             for key_j, val_j in ret[k].iteritems():
                 if(len(val_j) == 0):
                     continue
-                print val_j[0], communities[i], best_result["nmi"][key_j], key_j
-                best_result["nmĩ"][key_j]  = max(best_result["nmi"][key_j], compare_communities(communities[i], val_j[0], method="nmi"))
+                #print val_j[0], communities[i], best_result["nmi"][key_j], key_j
+                best_result["nmi"][key_j]  = max(best_result["nmi"][key_j], compare_communities(communities[i], val_j[0], method="nmi"))
                 best_result["rand"][key_j] = max(best_result["rand"][key_j], compare_communities(communities[i], val_j[0], method="rand"))
 
             for key_i, val_i in ret[k].iteritems():
@@ -314,7 +314,6 @@ def solveWithConsensus(graphs, communities, metric_method, threshold, np):
                     if(len(val_i) == 0 or len(val_j) == 0):
                         continue
                     if(val_i[0] != val_j[0]):
-                        print key_i, val_i[0], key_j, val_j[0]
                         ok = False
                         break
 
@@ -331,7 +330,7 @@ def solveWithConsensus(graphs, communities, metric_method, threshold, np):
                 result += compare_communities(ret[k]['walktrap'][0], communities[i], method = metric_method)
             
         #print j
-
+        
     print best_result
 
     return result/len(graphs)*1.0

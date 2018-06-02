@@ -263,16 +263,21 @@ def main(files):
             # use rand for rand index and nmi for nmi clustering evaluation
             cur_val_nmi = 0.0
             cur_val_rand = 0.0
-            
+            '''
             ret = solveGraphs(entries, connectedGraphs, communities, metric_method=method)
             kmeans = solveIAMethods(connectedLists, communities, methods=['nmi', 'rand']) 
             
             y['nmi']['kmeans'].append(kmeans[0]/len(connectedLists))
             y['rand']['kmeans'].append(kmeans[1]/len(connectedLists))
+            '''
             #print (kmeans[0]/len(connectedLists))
-            #ret_consensus = solveWithConsensus(connectedGraphs, communities, method, tol, np)
+            print "\n--------------------------------------------------------\n"
+            print k 
+            ret_consensus = solveWithConsensus(connectedGraphs, communities, method, tol, np)
             #y['consensus'].append(ret_consensus)
-            
+            print "\n--------------------------------------------------------\n"
+            continue
+
             best_performance_nmi.update({k : ret['nmi']})
             best_performance_rand.update({k : ret['rand']})
 
@@ -291,7 +296,7 @@ def main(files):
             maxi_eval_nmi = max(maxi_eval_nmi,cur_val_nmi)
             maxi_eval_rand = max(maxi_eval_rand,cur_val_rand)
                   
-
+    return 
     ranks = findBestRank(best_performance_nmi)
     #plotRank(ranks, "NMI")
     print ("NMI")
