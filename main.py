@@ -129,7 +129,7 @@ def findBestRank(best_performance):
                     cur_rank += 1.0
 
             rank[method] += cur_rank
-        print method
+        #print method
         rank[method] /= len(best_performance[kmax][method])*1.0
 
     return rank
@@ -184,7 +184,8 @@ def plotRank(ranks, method):
 def main(files):
 
     data = []
-    best_performance = {}
+    best_performance_nmi = {}
+    best_performance_rand = {}
     label = {}
     color = {}
     entries = {}
@@ -192,10 +193,12 @@ def main(files):
     y = {}
     kmeans = 0.0
 
-    maxk = 7
-    method = "nmi"
+    maxk = 17
+    method = "rand"
     np = 6
     tol = 0.70
+    maxi_eval_nmi = 0.0
+    maxi_eval_rand = 0.0
 
     color['edgeBetweeness'] = "blue"
     color['fastGreedy'] = "red"
@@ -225,60 +228,120 @@ def main(files):
     entries['walktrap'] = True
     entries['infoMap'] = True
     entries['kmeans'] = True
-
-    y  = {'edgeBetweeness' : [], 'fastGreedy' : [], 'labelPropag' : [], 'leadingEigen' : [],
+    y = {}
+    
+    y['nmi'] = {'edgeBetweeness' : [], 'fastGreedy' : [], 'labelPropag' : [], 'leadingEigen' : [],
           'multilevel' : [], 'walktrap' : [], 'infoMap' : [], 'kmeans' : []}#, 'consensus' : []}
 
-    print ("Executing these files : %s" % (files))
+    y['rand'] = {'edgeBetweeness' : [], 'fastGreedy' : [], 'labelPropag' : [], 'leadingEigen' : [],
+          'multilevel' : [], 'walktrap' : [], 'infoMap' : [], 'kmeans' : []}#, 'consensus' : []}
+
+    #print ("Executing these files : %s" % (files))
 
     for k in range(2,maxk):
         communities = []
         graphs = []    
         kmeans = 0.0
-        for fileName in files:
-            graphs.append(createGraph(fileName,k))
-            result,_ = parseData(fileName)
-            communities.append(result)
+        #print k
+        try:
+            for fileName in files:
+                graphs.append(createGraph(fileName,k))
+                result,_ = parseData(fileName)
+                communities.append(result)
 
-        connectedGraphs = []
-        connectedLists  = []
-        connectedGraphs,connectedLists = testGraphs(graphs)
+            connectedGraphs = []
+            connectedLists  = []
+            connectedGraphs,connectedLists = testGraphs(graphs)
+        except:
+            break
+
+        #for i in range(len(connectedLists)):
+        #    for j in range(len(connectedLists[i])):
+        #        connectedLists[i][j].pop()
 
         if(len(connectedGraphs) >= 8):
             # use rand for rand index and nmi for nmi clustering evaluation
-            print (k)
+            cur_val_nmi = 0.0
+            cur_val_rand = 0.0
+            
             ret = solveGraphs(entries, connectedGraphs, communities, metric_method=method)
-            kmeans = solveIAMethods(connectedLists, communities, methods=[method]) 
-            y['kmeans'].append(kmeans[0]/len(connectedLists))
-
-            ret_consensus = solveWithConsensus(connectedGraphs, communities, method, tol, np)
+            kmeans = solveIAMethods(connectedLists, communities, methods=['nmi', 'rand']) 
+            
+            y['nmi']['kmeans'].append(kmeans[0]/len(connectedLists))
+            y['rand']['kmeans'].append(kmeans[1]/len(connectedLists))
+            #print (kmeans[0]/len(connectedLists))
+            #ret_consensus = solveWithConsensus(connectedGraphs, communities, method, tol, np)
             #y['consensus'].append(ret_consensus)
             
-            best_performance.update({k : ret})
-            for key, value in ret.iteritems():
-                y[key].append(sum(value)/len(connectedGraphs)*1.0)
+            best_performance_nmi.update({k : ret['nmi']})
+            best_performance_rand.update({k : ret['rand']})
 
-            x.append(k)      
+            for key, value in ret['nmi'].iteritems():
+                y['nmi'][key].append(sum(value)/len(connectedGraphs)*1.0)
+                cur_val_nmi = max(cur_val_nmi, sum(value)/len(connectedGraphs)*1.0)
 
-    ranks = findBestRank(best_performance)
-    plotRank(ranks, method)
+            for key, value in ret['rand'].iteritems():
+                y['rand'][key].append(sum(value)/len(connectedGraphs)*1.0)
+                cur_val_rand = max(cur_val_rand, sum(value)/len(connectedGraphs)*1.0)
 
+            x.append(k)
+
+            if(cur_val_nmi < maxi_eval_nmi and cur_val_rand < maxi_eval_rand and k >= 10):
+                break
+            maxi_eval_nmi = max(maxi_eval_nmi,cur_val_nmi)
+            maxi_eval_rand = max(maxi_eval_rand,cur_val_rand)
+                  
+
+    ranks = findBestRank(best_performance_nmi)
+    #plotRank(ranks, "NMI")
+    print ("NMI")
+    print (ranks)
+    print "\n"
+
+    ranks = findBestRank(best_performance_rand)
+    #plotRank(ranks, "Rand Index")
+    print ("Rand Index")
+    print (ranks)
+    print "\n"
+    print x
+    print "\n"    
+    print y
+    print "\n"
+    print "------------------------------------------------------\n\n"
+
+    '''
     plt.style.use('fivethirtyeight')
 
-    for key, val in y.iteritems():
+    for key, val in y['nmi'].iteritems():
         plt.plot(x,val,label=label[key],color=color[key])
 
     plt.xlabel("k")
-    plt.ylabel("%s(k)" % method)
+    plt.ylabel("NMI(k)")
     plt.ylim(ymax=1.0)
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.tight_layout(rect=[0,0,0.75,1])
     plt.show()
 
+    for key, val in y['rand'].iteritems():
+        plt.plot(x,val,label=label[key],color=color[key])
+
+    plt.xlabel("k")
+    plt.ylabel("Rand Index(k)")
+    plt.ylim(ymax=1.0)
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.tight_layout(rect=[0,0,0.75,1])
+    plt.show()
+    '''
 
 files = sorted(glob("./*.arff"))
 
 #EvaluateKMeans(files,["nmi", "rand"])
-
-main(files)
+for i in range(0,len(files),10):
+    cur_files = []
+    
+    for j in range(i,i+10):
+        cur_files.append(files[j])
+    
+    print cur_files
+    main(cur_files)
 

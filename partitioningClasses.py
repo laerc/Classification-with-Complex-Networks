@@ -85,6 +85,7 @@ def createGraph(fileName, k):
     #deixa a classe de cada elemento sendo um valor inteiro
     for i in range(len(list)):
         list[i][numberFeatures] = int(list[i][numberFeatures])
+        list[i].pop()
    
     #calcula a distancia euclidiana dos pontos e monta uma lista
     for i in range(len(list)):
@@ -125,46 +126,77 @@ def testGraphs(graphs):
 def solveGraphs(entries, graphs, community, metric_method):
     
     numberClasses = community[-1][-1]+1   
+    ret = {'nmi' : {}, 'rand' : {}}
+    
+    ret['nmi'] = ({'edgeBetweeness' : [], 'fastGreedy' : [], 'labelPropag' : [], 'leadingEigen' : [],
+            'multilevel' : [], 'walktrap' : [], 'infoMap' : []})
 
-    ret = ({'edgeBetweeness' : [], 'fastGreedy' : [], 'labelPropag' : [], 'leadingEigen' : [],
+    ret['rand'] = ({'edgeBetweeness' : [], 'fastGreedy' : [], 'labelPropag' : [], 'leadingEigen' : [],
             'multilevel' : [], 'walktrap' : [], 'infoMap' : []})
 
     for i in range(len(graphs)):    
         if entries['edgeBetweeness'] == True:
             #vai recalculando o betweenness, e as arestas de maior betweenness sao tiradas
-            edgeBetweeness = compare_communities(community[i],graphs[i].community_edge_betweenness(clusters=numberClasses).as_clustering(numberClasses).membership,method=metric_method)
-            ret['edgeBetweeness'].append(edgeBetweeness)
+            edgeBetweeness = graphs[i].community_edge_betweenness(clusters=numberClasses).as_clustering(numberClasses).membership
+            edgeBetweeness_nmi = compare_communities(community[i],edgeBetweeness,method="nmi")
+            edgeBetweeness_rand = compare_communities(community[i],edgeBetweeness,method="rand")
+            ret['nmi']['edgeBetweeness'].append(edgeBetweeness_nmi)
+            ret['rand']['edgeBetweeness'].append(edgeBetweeness_rand)
 
         if entries['fastGreedy'] == True:
             #vai aglomerando as comunidades ate que nao aumenta a modularidade
-            fastGreedy = compare_communities(community[i],graphs[i].community_fastgreedy().as_clustering(numberClasses).membership,method=metric_method)
-            ret['fastGreedy'].append(fastGreedy)
+            fastGreedy = graphs[i].community_fastgreedy().as_clustering(numberClasses).membership
+            fastGreedy_nmi = compare_communities(community[i],fastGreedy,method="nmi")
+            fastGreedy_rand = compare_communities(community[i],fastGreedy,method="rand")
+            ret['nmi']['fastGreedy'].append(fastGreedy_nmi)
+            ret['rand']['fastGreedy'].append(fastGreedy_rand)
         
         if entries['labelPropag'] == True:
             # usa o metodo de (label propagation method of Raghavan et al)
-            labelPropag = compare_communities(community[i],graphs[i].community_label_propagation().membership,method=metric_method)
-            ret['labelPropag'].append(labelPropag)
+            labelPropag = graphs[i].community_label_propagation().membership
+            labelPropag_nmi = compare_communities(community[i],labelPropag,method="nmi")
+            labelPropag_rand = compare_communities(community[i],labelPropag,method="rand")
+            ret['nmi']['labelPropag'].append(labelPropag_nmi)
+            ret['rand']['labelPropag'].append(labelPropag_rand)
             
         if entries['leadingEigen'] == True:
             #Newman's leading eigenvector
-            arpack_options.maxiter=3000
-            leadingEigen = compare_communities(community[i],graphs[i].community_leading_eigenvector(numberClasses).membership,method=metric_method)
-            ret['leadingEigen'].append(leadingEigen)
-            
+            arpack_options.maxiter = 50000
+            try:
+                leadingEigen = graphs[i].community_leading_eigenvector(numberClasses).membership
+                leadingEigen_nmi = compare_communities(community[i],leadingEigen,method="nmi")
+                leadingEigen_rand = compare_communities(community[i],leadingEigen,method="rand")
+                
+            except:
+                leadingEigen_nmi = 0.0
+                leadingEigen_rand = 0.0
+
+            ret['nmi']['leadingEigen'].append(leadingEigen_nmi)
+            ret['rand']['leadingEigen'].append(leadingEigen_rand)
+        
         if entries['multilevel'] == True:    
             #baseado no algoritmo de Blondel et al.
-            multilevel = compare_communities(community[i],graphs[i].community_multilevel().membership,method=metric_method)
-            ret['multilevel'].append(multilevel)
+            multilevel = graphs[i].community_multilevel().membership
+            multilevel_nmi = compare_communities(community[i],multilevel,method="nmi")
+            multilevel_rand = compare_communities(community[i],multilevel,method="rand")
+            ret['nmi']['multilevel'].append(multilevel_nmi)
+            ret['rand']['multilevel'].append(multilevel_rand)
             
         if entries['walktrap'] == True:
             #baseado em random walks, usa o metodo de  Latapy & Pons
-            walktrap = compare_communities(community[i],graphs[i].community_walktrap().as_clustering(numberClasses).membership,method=metric_method)
-            ret['walktrap'].append(walktrap)
+            walktrap = graphs[i].community_walktrap().as_clustering(numberClasses).membership
+            walktrap_nmi = compare_communities(community[i],walktrap,method="nmi")
+            walktrap_rand = compare_communities(community[i],walktrap,method="rand")
+            ret['nmi']['walktrap'].append(walktrap_nmi)
+            ret['rand']['walktrap'].append(walktrap_rand)
 
         if entries['infoMap'] == True:
             #verify how to take the membership
-            infoMap = compare_communities(community[i],graphs[i].community_infomap().membership,method=metric_method)
-            ret['infoMap'].append(infoMap)  
+            infoMap = graphs[i].community_infomap().membership
+            infoMap_nmi = compare_communities(community[i],infoMap,method="nmi")
+            infoMap_rand = compare_communities(community[i],infoMap,method="rand")
+            ret['nmi']['infoMap'].append(infoMap_nmi)
+            ret['rand']['infoMap'].append(infoMap_rand)  
 
         #layout = graphs[i].layout("kk")
         #plot(graphs[i], mark_groups = True, layout=layout)
@@ -217,48 +249,65 @@ def createConsensusGraphsWeighted(clusters, size, threshold, np):
 def solveWithConsensus(graphs, communities, metric_method, threshold, np):
     numberClasses = communities[-1][-1]+1
     result = 0.0    
+    best_result = {"nmi" : {}, "rand" : {}}
+    
+    best_result["nmi"] = ({'edgeBetweeness' : 0.0, 'fastGreedy' : 0.0, 'labelPropag' : 0.0, 'leadingEigen' : 0.0,
+            'multilevel' : 0.0, 'walktrap' : 0.0, 'infoMap' : 0.0})
+
+    best_result["rand"] = ({'edgeBetweeness' : 0.0, 'fastGreedy' : 0.0, 'labelPropag' : 0.0, 'leadingEigen' : 0.0,
+            'multilevel' : 0.0, 'walktrap' : 0.0, 'infoMap' : 0.0})
 
     for i in range(len(graphs)):
         ok = False
+        
         k = 0
         j = 0
 
-        #graphs[i].es["weight"] = 1.0
+        graphs[i].es["weight"] = 1.0
         
         while(ok == False):
             ok = True
             ret = []    
             j+=1
+            if (j == 100):
+                break
             ret.append({'edgeBetweeness' : [], 'fastGreedy' : [], 'labelPropag' : [], 'leadingEigen' : [],
             'multilevel' : [], 'walktrap' : [], 'infoMap' : []})
             # usa o metodo de (label propagation method of Raghavan et al)
             
-            labelPropag = graphs[i].community_label_propagation().membership
-            #ret[k]['labelPropag'].append(labelPropag)
+            labelPropag = graphs[i].community_label_propagation(weights="weight").membership
+            ret[k]['labelPropag'].append(labelPropag)
             
             #Newman's leading eigenvector
-            leadingEigen = graphs[i].community_leading_eigenvector(clusters=numberClasses).membership
+            leadingEigen = graphs[i].community_leading_eigenvector(weights="weight",clusters=numberClasses).membership
             ret[k]['leadingEigen'].append(leadingEigen)
             
             #baseado no algoritmo de Blondel et al.
-            multilevel = graphs[i].community_multilevel().membership
+            multilevel = graphs[i].community_multilevel(weights="weight").membership
             ret[k]['multilevel'].append(multilevel)
             
             #baseado em random walks, usa o metodo de  Latapy & Pons
-            walktrap = graphs[i].community_walktrap().as_clustering(numberClasses).membership
+            walktrap = graphs[i].community_walktrap(weights="weight").as_clustering(numberClasses).membership
             ret[k]['walktrap'].append(walktrap)
 
             #verify how to take the membership
-            infoMap = graphs[i].community_infomap().membership
-            #ret[k]['infoMap'].append(infoMap)
+            infoMap = graphs[i].community_infomap(edge_weights="weight").membership
+            ret[k]['infoMap'].append(infoMap)
 
             #vai recalculando o betweenness, e as arestas de maior betweenness sao tiradas
-            edgeBetweeness = graphs[i].community_edge_betweenness(clusters=numberClasses).as_clustering(numberClasses).membership
+            edgeBetweeness = graphs[i].community_edge_betweenness(weights="weight",clusters=numberClasses).as_clustering(numberClasses).membership
             ret[k]['edgeBetweeness'].append(edgeBetweeness)
 
             #vai aglomerando as comunidades ate que nao aumenta a modularidade
-            fastGreedy = graphs[i].community_fastgreedy().as_clustering(numberClasses).membership
-            #ret[k]['fastGreedy'].append(fastGreedy)
+            fastGreedy = graphs[i].community_fastgreedy(weights="weight").as_clustering(numberClasses).membership
+            ret[k]['fastGreedy'].append(fastGreedy)
+
+            for key_j, val_j in ret[k].iteritems():
+                if(len(val_j) == 0):
+                    continue
+                print val_j[0], communities[i], best_result["nmi"][key_j], key_j
+                best_result["nmĩ"][key_j]  = max(best_result["nmi"][key_j], compare_communities(communities[i], val_j[0], method="nmi"))
+                best_result["rand"][key_j] = max(best_result["rand"][key_j], compare_communities(communities[i], val_j[0], method="rand"))
 
             for key_i, val_i in ret[k].iteritems():
                 for key_j, val_j in ret[k].iteritems():
@@ -268,9 +317,10 @@ def solveWithConsensus(graphs, communities, metric_method, threshold, np):
                         print key_i, val_i[0], key_j, val_j[0]
                         ok = False
                         break
+
                 if(ok == False):
                     break
-
+            
             #They differ from at least one
             if(ok == False):
                 adj_mat = createConsensusGraphsWeighted(ret[k], len(communities[i]), threshold, np)
@@ -279,7 +329,10 @@ def solveWithConsensus(graphs, communities, metric_method, threshold, np):
             #They are all equal
             else:
                 result += compare_communities(ret[k]['walktrap'][0], communities[i], method = metric_method)
+            
         #print j
+
+    print best_result
 
     return result/len(graphs)*1.0
 
@@ -297,6 +350,11 @@ def createConsensusGraphs(clusters, threshold, np):
                     if val[0][i] == val[0][j]:
                         D[key][i][j] += 1
 
+    for key, val in cluster.iteritems():         
+        graphs[key] = Graph.Weighted_Adjacency(D[key],mode=ADJ_UNDIRECTED)
+
+    return graphs
+'''
     for key, val in cluster.iteritems():
         graph = Graph()
         graph.add_vertices(val[0])
@@ -313,8 +371,8 @@ def createConsensusGraphs(clusters, threshold, np):
         graph.simplify()
         #graphs[key] = Graph.Adjacency(D[key])
         graphs[key] = graph
+'''    
     
-    return graphs
 
 
 def createMatrixConsensuns(entries, graphs, np, threshold, numberClasses):
@@ -382,7 +440,7 @@ def createMatrixConsensuns(entries, graphs, np, threshold, numberClasses):
 def consensus(entries, graphs, community, metric_method, np, threshold):
     numberClasses = community[-1][-1]+1
     current_graph = []
-    max_iter = 200
+    max_iter = 100
 
     for i in range(len(graphs)):
         current_graph.append({'edgeBetweeness' : graphs[i], 'fastGreedy' : graphs[i], 'labelPropag' : graphs[i], 
