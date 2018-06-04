@@ -6,6 +6,7 @@ from glob import *
 from igraph import *
 from partitioningClasses import *
 from sklearn.cluster import KMeans
+from matplotlib.ticker import MaxNLocator
 
 import cv2 as cv
 
@@ -196,7 +197,7 @@ def main(files):
 
     maxk = 17
     method = "rand"
-    np = 6
+    np = 10
     tol = 0.70
     maxi_eval_nmi = 0.0
     maxi_eval_rand = 0.0
@@ -273,7 +274,10 @@ def main(files):
                 for key_algo, value_algo in value_method.iteritems():
                     y[key_method][key_algo].append(value_algo/len(connectedLists))
 
+            #ret_consensus = solveWithConsensus(connectedGraphs, communities, method, tol, np)
+            
             '''print "\n--------------------------------------------------------\n"
+            
             print k 
             ret_consensus = solveWithConsensus(connectedGraphs, communities, method, tol, np)
             print "\n--------------------------------------------------------\n"
@@ -299,13 +303,18 @@ def main(files):
 
 
     ranks = findBestRank(best_performance_nmi)
-    plotRank(ranks, "NMI")
-    '''print ("NMI")
-    print (ranks)
-    print "\n"
-    '''
+    '''plotRank(ranks, "NMI")'''
+    #print ("NMI")
+    print "nmi"
+    print ranks
+    
     ranks = findBestRank(best_performance_rand)
-    plotRank(ranks, "Rand Index")
+    print "rand"
+    print ranks
+
+    print x
+    print y
+    #plotRank(ranks, "Rand Index")
     '''print ("Rand Index")
     print (ranks)
     print "\n"
@@ -315,7 +324,7 @@ def main(files):
     print "\n"
     print "------------------------------------------------------\n\n"
     '''
-    
+    '''
     plt.style.use('fivethirtyeight')
 
     for key, val in y['nmi'].iteritems():
@@ -337,7 +346,71 @@ def main(files):
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.tight_layout(rect=[0,0,0.75,1])
     plt.show()
+    '''
+
+def plot(ranks_nmi, ranks_rand, x, y):
+    plt.style.use('fivethirtyeight')
+    #plt.gca().xaxis.set_major_locator(MaxNLocator(prune='lower'))
+
+    color = {}
+    label = {}
+    color['edgeBetweeness'] = "blue"
+    color['fastGreedy'] = "red"
+    color['labelPropag'] = "green"
+    color['leadingEigen'] = "purple"
+    color['multilevel'] = "orange"
+    color['walktrap'] = "black"
+    color['infoMap'] = "grey"
+    color['kmeans'] = "teal"
+    color['EM'] = "indigo"
+
+    label['edgeBetweeness'] = "Edge Betweenness"
+    label['fastGreedy'] = "Fast Greedy"
+    label['labelPropag'] = "Label Propagation"
+    label['leadingEigen'] = "Leading Eigenvector"
+    label['multilevel'] = "Multilevel"
+    label['walktrap'] = "Walktrap"
+    label['infoMap'] = "Infomap"
+    label['kmeans'] = "K-Means"
+    label['EM'] = "Expectation-Maximization"
+
+    plt.xticks(rotation=45)
+    plotRank(ranks_nmi , "NMI")
+    plt.xticks(rotation=45)
+    plotRank(ranks_rand, "Rand Index")
     
+
+    plt.style.use('fivethirtyeight')
+
+    for key, val in y['nmi'].iteritems():
+        plt.plot(x,val,label=label[key],color=color[key])
+
+    plt.xlabel("k")
+    plt.ylabel("NMI(k)")
+    plt.ylim(ymax=1.0)
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.tight_layout(rect=[0,0,0.75,1])
+    plt.show()
+
+    for key, val in y['rand'].iteritems():
+        plt.plot(x,val,label=label[key],color=color[key])
+
+    plt.xlabel("k")
+    plt.ylabel("Rand Index(k)")
+    plt.ylim(ymax=1.0)
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.tight_layout(rect=[0,0,0.75,1])
+    plt.show()
+
+'''
+ranks_nmi  = {'labelPropag': 6.0, 'fastGreedy': 1.2, 'walktrap': 1.7, 'leadingEigen': 2.3, 'infoMap': 4.5, 'multilevel': 5.0, 'edgeBetweeness': 1.5}
+ranks_rand = {'labelPropag': 5.6, 'fastGreedy': 1.2, 'walktrap': 1.7, 'leadingEigen': 2.2, 'infoMap': 4.6, 'multilevel': 5.6, 'edgeBetweeness': 1.5}
+
+x = [3, 4, 5, 6, 7, 8, 9, 10]
+y = {'rand': {'EM': [0.5015555555555556, 0.5037979797979798, 0.5036565656565657, 0.49923232323232325, 0.501090909090909, 0.5005656565656567, 0.503070707070707, 0.5018181818181818], 'infoMap': [0.5790505050505048, 0.5979999999999999, 0.6183030303030304, 0.6311717171717172, 0.647111111111111, 0.6770707070707069, 0.7152525252525253, 0.7368888888888888], 'multilevel': [0.6264444444444444, 0.6393333333333332, 0.6485252525252524, 0.6648686868686867, 0.6731717171717171, 0.6862626262626261, 0.6868484848484847, 0.6867878787878787], 'labelPropag': [0.5836161616161617, 0.6061414141414141, 0.643090909090909, 0.6482424242424242, 0.6484040404040403, 0.6672525252525252, 0.6654545454545453, 0.6102424242424244], 'fastGreedy': [0.9186060606060605, 0.9255555555555557, 0.9709696969696969, 0.986121212121212, 0.9536767676767678, 0.9753737373737372, 0.9651919191919192, 0.9191111111111111], 'edgeBetweeness': [0.9652525252525253, 0.9141414141414141, 0.926888888888889, 0.859030303030303, 0.8658383838383837, 0.8576363636363636, 0.848181818181818, 0.6786666666666665], 'walktrap': [0.9213737373737374, 0.9288080808080809, 0.9120202020202021, 0.9572121212121212, 0.9620606060606061, 0.9667878787878788, 0.935070707070707, 0.8750101010101012], 'leadingEigen': [0.6373939393939393, 0.8383434343434344, 0.9204646464646465, 0.9069292929292929, 0.8895757575757577, 0.8929292929292929, 0.9058787878787878, 0.8618181818181817], 'kmeans': [0.5004848484848485, 0.5004848484848485, 0.5004848484848485, 0.5004848484848485, 0.5004848484848485, 0.5004848484848485, 0.5004848484848485, 0.5004848484848485]}, 'nmi': {'EM': [0.006064042038705345, 0.0055902347539386315, 0.01146029986327975, 0.01074623022623163, 0.01788617908432803, 0.01604878456548018, 0.03586449964891239, 0.008418011313691983], 'infoMap': [0.4186906449213098, 0.44653463534389537, 0.4698299562224186, 0.48956272840715015, 0.5006130486894588, 0.5481605410920851, 0.5709169080045136, 0.5711256904402946], 'multilevel': [0.48673810299749354, 0.49564527938961983, 0.5053820029144855, 0.5308236236868485, 0.5365041690562719, 0.5607393062082824, 0.5665934258721499, 0.5462091938222964], 'labelPropag': [0.4113847140145552, 0.4378064378674174, 0.47370609515815965, 0.48661895991162096, 0.45829263297725253, 0.4519675117038823, 0.4213686558734544, 0.2795344050844284], 'fastGreedy': [0.8220291364794005, 0.8257047325972318, 0.9191520357699714, 0.9544097421864344, 0.8903536049875262, 0.9395770601617013, 0.9145593197221169, 0.800768049641864], 'edgeBetweeness': [0.9088379492713237, 0.8161747221618457, 0.841968753425037, 0.7318965450114725, 0.735209760162196, 0.7135037806376036, 0.6990759161925959, 0.43332397771667497], 'walktrap': [0.8313624755344433, 0.8463130245818485, 0.8100327174842393, 0.905110570804007, 0.900500521685211, 0.9194672377235877, 0.834420900736385, 0.7441642031535847], 'leadingEigen': [0.27815550283746315, 0.6227517307335422, 0.8030043997848948, 0.7766919711405482, 0.7498885953587469, 0.7422280016407361, 0.7703574258234591, 0.6809796980219136], 'kmeans': [0.008539442881051011, 0.008539442881051011, 0.008539442881051011, 0.008539442881051011, 0.008539442881051011, 0.008539442881051011, 0.008539442881051011, 0.008539442881051011]}}
+
+plot(ranks_nmi,ranks_rand,x,y)
+'''
 
 files = sorted(glob("./*.arff"))
 
@@ -348,6 +421,6 @@ for i in range(0,len(files),10):
     for j in range(i,i+10):
         cur_files.append(files[j])
     
-    print cur_files
+    print cur_files[0]
     main(cur_files)
 

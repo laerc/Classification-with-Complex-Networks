@@ -278,11 +278,11 @@ def solveWithConsensus(graphs, communities, metric_method, threshold, np):
             # usa o metodo de (label propagation method of Raghavan et al)
             
             labelPropag = graphs[i].community_label_propagation(weights="weight").membership
-            ret[k]['labelPropag'].append(labelPropag)
+            #ret[k]['labelPropag'].append(labelPropag)
             
             #Newman's leading eigenvector
             leadingEigen = graphs[i].community_leading_eigenvector(weights="weight",clusters=numberClasses).membership
-            ret[k]['leadingEigen'].append(leadingEigen)
+            #ret[k]['leadingEigen'].append(leadingEigen)
             
             #baseado no algoritmo de Blondel et al.
             multilevel = graphs[i].community_multilevel(weights="weight").membership
@@ -302,7 +302,7 @@ def solveWithConsensus(graphs, communities, metric_method, threshold, np):
 
             #vai aglomerando as comunidades ate que nao aumenta a modularidade
             fastGreedy = graphs[i].community_fastgreedy(weights="weight").as_clustering(numberClasses).membership
-            ret[k]['fastGreedy'].append(fastGreedy)
+            #ret[k]['fastGreedy'].append(fastGreedy)
 
             for key_j, val_j in ret[k].iteritems():
                 if(len(val_j) == 0):
@@ -331,6 +331,10 @@ def solveWithConsensus(graphs, communities, metric_method, threshold, np):
             else:
                 result += compare_communities(ret[k]['walktrap'][0], communities[i], method = metric_method)
             
+            #print graphs[i].es["weight"]
+            #layout = graphs[i].layout("kk")
+            #plot(graphs[i], layout = layout)
+            #return
         #print j
 
     print best_result
@@ -372,9 +376,7 @@ def createConsensusGraphs(clusters, threshold, np):
         graph.simplify()
         #graphs[key] = Graph.Adjacency(D[key])
         graphs[key] = graph
-'''    
-    
-
+'''     
 
 def createMatrixConsensuns(entries, graphs, np, threshold, numberClasses):
     ret = []
@@ -386,56 +388,56 @@ def createMatrixConsensuns(entries, graphs, np, threshold, numberClasses):
             'multilevel' : True, 'walktrap' : True, 'infoMap' : True })
 
     for i in range(len(graphs)):
-        ret = []
+        ret.append([])
         
         for k in range(np):    
-            ret.append({'edgeBetweeness' : [], 'fastGreedy' : [], 'labelPropag' : [], 'leadingEigen' : [],
+            ret[i].append({'edgeBetweeness' : [], 'fastGreedy' : [], 'labelPropag' : [], 'leadingEigen' : [],
             'multilevel' : [], 'walktrap' : [], 'infoMap' : []})
             if entries['edgeBetweeness'] == True:
                 #vai recalculando o betweenness, e as arestas de maior betweenness sao tiradas
-                edgeBetweeness = graphs[i]['edgeBetweeness'].community_edge_betweenness(clusters=numberClasses).as_clustering(numberClasses).membership
-                ret[k]['edgeBetweeness'].append(edgeBetweeness)
-                allequal[i]['edgeBetweeness'] = allequal[i]['edgeBetweeness'] & isCommunitiesEqual(ret[k]['edgeBetweeness'], ret[k-1]['edgeBetweeness'])
+                edgeBetweeness = graphs[i]['edgeBetweeness'].community_edge_betweenness(weights="weight",clusters=numberClasses).as_clustering(numberClasses).membership
+                ret[i][k]['edgeBetweeness'].append(edgeBetweeness)
+                allequal[i]['edgeBetweeness'] = allequal[i]['edgeBetweeness'] & isCommunitiesEqual(ret[i][k]['edgeBetweeness'], ret[i][k-1]['edgeBetweeness'])
 
             if entries['fastGreedy'] == True:
                 #vai aglomerando as comunidades ate que nao aumenta a modularidade
-                fastGreedy = graphs[i]['fastGreedy'].community_fastgreedy().as_clustering(numberClasses).membership
-                ret[k]['fastGreedy'].append(fastGreedy)
-                allequal[i]['fastGreedy'] = allequal[i]['fastGreedy'] & isCommunitiesEqual(ret[k]['fastGreedy'], ret[k-1]['fastGreedy'])
+                fastGreedy = graphs[i]['fastGreedy'].community_fastgreedy(weights="weight").as_clustering(numberClasses).membership
+                ret[i][k]['fastGreedy'].append(fastGreedy)
+                allequal[i]['fastGreedy'] = allequal[i]['fastGreedy'] & isCommunitiesEqual(ret[i][k]['fastGreedy'], ret[i][k-1]['fastGreedy'])
             
             if entries['labelPropag'] == True:
                 # usa o metodo de (label propagation method of Raghavan et al)
-                labelPropag = graphs[i]['labelPropag'].community_label_propagation().membership
-                ret[k]['labelPropag'].append(labelPropag)
-                allequal[i]['labelPropag'] = allequal[i]['labelPropag'] & isCommunitiesEqual(ret[k]['labelPropag'], ret[k-1]['labelPropag'])
+                labelPropag = graphs[i]['labelPropag'].community_label_propagation(weights="weight").membership
+                ret[i][k]['labelPropag'].append(labelPropag)
+                allequal[i]['labelPropag'] = allequal[i]['labelPropag'] & isCommunitiesEqual(ret[i][k]['labelPropag'], ret[i][k-1]['labelPropag'])
                 
             if entries['leadingEigen'] == True:
                 #Newman's leading eigenvector
-                leadingEigen = graphs[i]['leadingEigen'].community_leading_eigenvector(numberClasses).membership
-                ret[k]['leadingEigen'].append(leadingEigen)
-                allequal[i]['leadingEigen'] = allequal[i]['leadingEigen'] & isCommunitiesEqual(ret[k]['leadingEigen'], ret[k-1]['leadingEigen'])
+                leadingEigen = graphs[i]['leadingEigen'].community_leading_eigenvector(weights="weight",clusters=numberClasses).membership
+                ret[i][k]['leadingEigen'].append(leadingEigen)
+                allequal[i]['leadingEigen'] = allequal[i]['leadingEigen'] & isCommunitiesEqual(ret[i][k]['leadingEigen'], ret[i][k-1]['leadingEigen'])
                 
             if entries['multilevel'] == True:    
                 #baseado no algoritmo de Blondel et al.
-                multilevel = graphs[i]['multilevel'].community_multilevel().membership
-                ret[k]['multilevel'].append(multilevel)
-                allequal[i]['multilevel'] = allequal[i]['multilevel'] & isCommunitiesEqual(ret[k]['multilevel'], ret[k-1]['multilevel'])
+                multilevel = graphs[i]['multilevel'].community_multilevel(weights="weight").membership
+                ret[i][k]['multilevel'].append(multilevel)
+                allequal[i]['multilevel'] = allequal[i]['multilevel'] & isCommunitiesEqual(ret[i][k]['multilevel'], ret[i][k-1]['multilevel'])
                 
             if entries['walktrap'] == True:
                 #baseado em random walks, usa o metodo de  Latapy & Pons
-                walktrap = graphs[i]['walktrap'].community_walktrap().as_clustering(numberClasses).membership
-                ret[k]['walktrap'].append(walktrap)
-                allequal[i]['walktrap'] = allequal[i]['walktrap'] & isCommunitiesEqual(ret[k]['walktrap'], ret[k-1]['walktrap'])
+                walktrap = graphs[i]['walktrap'].community_walktrap(weights="weight").as_clustering(numberClasses).membership
+                ret[i][k]['walktrap'].append(walktrap)
+                allequal[i]['walktrap'] = allequal[i]['walktrap'] & isCommunitiesEqual(ret[i][k]['walktrap'], ret[i][k-1]['walktrap'])
 
             if entries['infoMap'] == True:
                 #verify how to take the membership
-                infoMap = graphs[i]['infoMap'].community_infomap().membership
-                ret[k]['infoMap'].append(infoMap)
-                allequal[i]['infoMap'] = allequal[i]['infoMap'] & isCommunitiesEqual(ret[k]['infoMap'], ret[k-1]['infoMap'])
+                infoMap = graphs[i]['infoMap'].community_infomap(edge_weights="weight").membership
+                ret[i][k]['infoMap'].append(infoMap)
+                allequal[i]['infoMap'] = allequal[i]['infoMap'] & isCommunitiesEqual(ret[i][k]['infoMap'], ret[i][k-1]['infoMap'])
 
-        D.append(createConsensusGraphs(ret, threshold, np))
+        D.append(createConsensusGraphs(ret[i], threshold, np))
 
-    return D, allequal
+    return D, allequal, ret
 
 
 def consensus(entries, graphs, community, metric_method, np, threshold):
@@ -444,18 +446,35 @@ def consensus(entries, graphs, community, metric_method, np, threshold):
     max_iter = 100
 
     for i in range(len(graphs)):
+        graphs[i].es["weight"] = 1.0
         current_graph.append({'edgeBetweeness' : graphs[i], 'fastGreedy' : graphs[i], 'labelPropag' : graphs[i], 
             'leadingEigen' : graphs[i], 'multilevel' : graphs[i], 'walktrap' : graphs[i], 'infoMap' : graphs[i]})
 
     for i in range(max_iter):
         print "iteration %d" % i
-        runs, allequal = createMatrixConsensuns(entries, current_graph, np, threshold, numberClasses)
+        runs, allequal, ret = createMatrixConsensuns(entries, current_graph, np, threshold, numberClasses)
         current_graph = runs
 
         if(consensusSolved(allequal)):
-            break
+            return computeAllEqual(ret, community)
 
-    return current_graph
+    return ret
+
+def computeAllEqual(ret, community):
+    results = {"nmi" : {}, "rand" : {}}
+
+    results["nmi"] = {'edgeBetweeness' : [], 'fastGreedy' : [], 'labelPropag' : [], 
+            'leadingEigen' : [], 'multilevel' : [], 'walktrap' : [], 'infoMap' : []}
+
+    results["rand"] = {'edgeBetweeness' : [], 'fastGreedy' : [], 'labelPropag' : [], 
+            'leadingEigen' : [], 'multilevel' : [], 'walktrap' : [], 'infoMap' : []}
+
+    for i in range(len(ret)):
+        for key, val in ret[i][0].iteritems():
+            results["nmi"][key].append(compare_communities(val[0],community[i],method = "nmi"))
+            results["rand"][key].append(compare_communities(val[0],community[i],method = "rand"))
+
+    return results
 
 def isCommunitiesEqual(communityA, communityB):
 
@@ -486,7 +505,7 @@ def solveIAMethods(list, community, methods):
         for key_method, _ in ret.iteritems():
             ret[key_method]["kmeans"] += solveWithKMeans(list[i], community[i], numberClasses, key_method)
             ret[key_method]["EM"]     += solveWithEM    (list[i], community[i], numberClasses, key_method)
-            
+
     return ret
 
 #This method solves the problem with the algorithm k-Means
