@@ -1,3 +1,6 @@
+import Orange
+
+import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -8,7 +11,7 @@ from partitioningClasses import *
 from sklearn.cluster import KMeans
 from matplotlib.ticker import MaxNLocator
 
-import cv2 as cv
+
 
 def EvaluateKMeans(files, methods):
     numFiles = 0
@@ -115,7 +118,7 @@ def findBestRank(best_performance):
         kmax = 0
         max_val = 0.0
         
-        for key, val in best_performance.iteritems():
+        for key, val in best_performance.items():
             if(sum(val[method]) > max_val):
                 kmax = key
                 max_val = sum(val[method])
@@ -125,7 +128,7 @@ def findBestRank(best_performance):
         for i in range(len(best_performance[kmax][method])):
             cur_rank = 1.0
             cur_val  = best_performance[kmax][method][i]
-            for key, val in best_performance[kmax].iteritems():
+            for key, val in best_performance[kmax].items():
                 #Check if the performance of a given method is greater than the others
                 if cur_val < val[i]:
                     cur_rank += 1.0
@@ -158,16 +161,16 @@ def plotRank(ranks, method):
     label['infoMap'] = "Infomap"
     
     plt.style.use('fivethirtyeight')
-    print "Debug message : "
-    print ranks
+    print ("Debug message : ")
+    print (ranks)
 
-    #for key, value in ranks.iteritems():
-    colors = [value for key, value in color.iteritems()]
-    plt.scatter([value for key, value in ranks.iteritems()], [0 for i in range(len(ranks))], c=colors,marker="|", s=5000, linewidths=5, alpha=0.9)    
+    #for key, value in ranks.items():
+    colors = [value for key, value in color.items()]
+    plt.scatter([value for key, value in ranks.items()], [0 for i in range(len(ranks))], c=colors,marker="|", s=5000, linewidths=5, alpha=0.9)    
     #label
     plt.xlabel("Rank Medio(%s)" % (method))
     #x-axis values
-    plt.xticks([value for key,value in ranks.iteritems()])
+    plt.xticks([value for key,value in ranks.items()])
     
     #hide y-axis
     plt.yticks([0 for i in range(len(ranks))]," ")
@@ -270,8 +273,8 @@ def main(files):
             ai_methods = solveIAMethods(connectedLists, communities, methods=['nmi', 'rand'])
             ret = solveGraphs(entries, connectedGraphs, communities, metric_method=method)
 
-            for key_method, value_method in ai_methods.iteritems():
-                for key_algo, value_algo in value_method.iteritems():
+            for key_method, value_method in ai_methods.items():
+                for key_algo, value_algo in value_method.items():
                     y[key_method][key_algo].append(value_algo/len(connectedLists))
 
             #ret_consensus = solveWithConsensus(connectedGraphs, communities, method, tol, np)
@@ -286,11 +289,11 @@ def main(files):
             best_performance_nmi.update({k : ret['nmi']})
             best_performance_rand.update({k : ret['rand']})
 
-            for key, value in ret['nmi'].iteritems():
+            for key, value in ret['nmi'].items():
                 y['nmi'][key].append(sum(value)/len(connectedGraphs)*1.0)
                 cur_val_nmi = max(cur_val_nmi, sum(value)/len(connectedGraphs)*1.0)
 
-            for key, value in ret['rand'].iteritems():
+            for key, value in ret['rand'].items():
                 y['rand'][key].append(sum(value)/len(connectedGraphs)*1.0)
                 cur_val_rand = max(cur_val_rand, sum(value)/len(connectedGraphs)*1.0)
 
@@ -305,15 +308,15 @@ def main(files):
     ranks = findBestRank(best_performance_nmi)
     '''plotRank(ranks, "NMI")'''
     #print ("NMI")
-    print "nmi"
-    print ranks
+    print ("nmi")
+    print (ranks)
     
     ranks = findBestRank(best_performance_rand)
-    print "rand"
-    print ranks
+    print ("rand")
+    print (ranks)
 
-    print x
-    print y
+    print (x)
+    print (y)
     #plotRank(ranks, "Rand Index")
     '''print ("Rand Index")
     print (ranks)
@@ -327,7 +330,7 @@ def main(files):
     '''
     plt.style.use('fivethirtyeight')
 
-    for key, val in y['nmi'].iteritems():
+    for key, val in y['nmi'].items():
         plt.plot(x,val,label=label[key],color=color[key])
 
     plt.xlabel("k")
@@ -337,7 +340,7 @@ def main(files):
     plt.tight_layout(rect=[0,0,0.75,1])
     plt.show()
 
-    for key, val in y['rand'].iteritems():
+    for key, val in y['rand'].items():
         plt.plot(x,val,label=label[key],color=color[key])
 
     plt.xlabel("k")
@@ -382,7 +385,7 @@ def plot(ranks_nmi, ranks_rand, x, y):
 
     plt.style.use('fivethirtyeight')
 
-    for key, val in y['nmi'].iteritems():
+    for key, val in y['nmi'].items():
         plt.plot(x,val,label=label[key],color=color[key])
 
     plt.xlabel("k")
@@ -392,7 +395,7 @@ def plot(ranks_nmi, ranks_rand, x, y):
     plt.tight_layout(rect=[0,0,0.75,1])
     plt.show()
 
-    for key, val in y['rand'].iteritems():
+    for key, val in y['rand'].items():
         plt.plot(x,val,label=label[key],color=color[key])
 
     plt.xlabel("k")
@@ -421,6 +424,13 @@ for i in range(0,len(files),10):
     for j in range(i,i+10):
         cur_files.append(files[j])
     
-    print cur_files[0]
+    print (cur_files[0])
     main(cur_files)
 
+'''
+names = ["first", "third", "second", "fourth" ]
+avranks =  [1.9, 3.2, 2.8, 3.3 ]
+cd = Orange.evaluation.compute_CD(avranks, 30) #tested on 30 datasets
+Orange.evaluation.graph_ranks(avranks, names, cd=cd, width=6, textspace=1.5)
+plt.show()
+'''

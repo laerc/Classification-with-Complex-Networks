@@ -7,8 +7,6 @@ Created on Mon Sep 18 11:57:41 2017
 from glob import *
 from igraph import *
 
-from sets import Set
-
 from igraph import arpack_options
 from sklearn.cluster import KMeans
 
@@ -218,9 +216,9 @@ def createConsensusGraphsWeighted(clusters, size, threshold, np):
     
     #print adj_mat
 
-    for key_i, val_i in clusters.iteritems():
+    for key_i, val_i in clusters.items():
         seen_before.add(key_i)
-        for key_j, val_j in clusters.iteritems():
+        for key_j, val_j in clusters.items():
             if(key_j in seen_before): 
                 continue
             
@@ -304,15 +302,15 @@ def solveWithConsensus(graphs, communities, metric_method, threshold, np):
             fastGreedy = graphs[i].community_fastgreedy(weights="weight").as_clustering(numberClasses).membership
             #ret[k]['fastGreedy'].append(fastGreedy)
 
-            for key_j, val_j in ret[k].iteritems():
+            for key_j, val_j in ret[k].items():
                 if(len(val_j) == 0):
                     continue
                 #print val_j[0], communities[i], best_result["nmi"][key_j], key_j
                 best_result["nmi"][key_j]  = max(best_result["nmi"][key_j], compare_communities(communities[i], val_j[0], method="nmi"))
                 best_result["rand"][key_j] = max(best_result["rand"][key_j], compare_communities(communities[i], val_j[0], method="rand"))
 
-            for key_i, val_i in ret[k].iteritems():
-                for key_j, val_j in ret[k].iteritems():
+            for key_i, val_i in ret[k].items():
+                for key_j, val_j in ret[k].items():
                     if(len(val_i) == 0 or len(val_j) == 0):
                         continue
                     if(val_i[0] != val_j[0]):
@@ -337,7 +335,7 @@ def solveWithConsensus(graphs, communities, metric_method, threshold, np):
             #return
         #print j
 
-    print best_result
+    print (best_result)
 
     return result/len(graphs)*1.0
 
@@ -346,7 +344,7 @@ def createConsensusGraphs(clusters, threshold, np):
     graphs = {}
 
     for cluster in clusters:
-        for key, val in cluster.iteritems():
+        for key, val in cluster.items():
             if not(key in D):
                 D[key] = [[0 for i in range(len(val[0]))] for j in range(len(val[0]))]
 
@@ -355,12 +353,12 @@ def createConsensusGraphs(clusters, threshold, np):
                     if val[0][i] == val[0][j]:
                         D[key][i][j] += 1
 
-    for key, val in cluster.iteritems():         
+    for key, val in cluster.items():         
         graphs[key] = Graph.Weighted_Adjacency(D[key],mode=ADJ_UNDIRECTED)
 
     return graphs
 '''
-    for key, val in cluster.iteritems():
+    for key, val in cluster.items():
         graph = Graph()
         graph.add_vertices(val[0])
 
@@ -451,7 +449,7 @@ def consensus(entries, graphs, community, metric_method, np, threshold):
             'leadingEigen' : graphs[i], 'multilevel' : graphs[i], 'walktrap' : graphs[i], 'infoMap' : graphs[i]})
 
     for i in range(max_iter):
-        print "iteration %d" % i
+        print ("iteration %d" % i)
         runs, allequal, ret = createMatrixConsensuns(entries, current_graph, np, threshold, numberClasses)
         current_graph = runs
 
@@ -470,7 +468,7 @@ def computeAllEqual(ret, community):
             'leadingEigen' : [], 'multilevel' : [], 'walktrap' : [], 'infoMap' : []}
 
     for i in range(len(ret)):
-        for key, val in ret[i][0].iteritems():
+        for key, val in ret[i][0].items():
             results["nmi"][key].append(compare_communities(val[0],community[i],method = "nmi"))
             results["rand"][key].append(compare_communities(val[0],community[i],method = "rand"))
 
@@ -486,7 +484,7 @@ def isCommunitiesEqual(communityA, communityB):
 def consensusSolved(allequal):
     
     for i in range(len(allequal)):
-        for key, val in allequal[i].iteritems():
+        for key, val in allequal[i].items():
             if(val == False):
                 return False
 
@@ -502,7 +500,7 @@ def solveIAMethods(list, community, methods):
 
 
     for i in range(len(list)):
-        for key_method, _ in ret.iteritems():
+        for key_method, _ in ret.items():
             ret[key_method]["kmeans"] += solveWithKMeans(list[i], community[i], numberClasses, key_method)
             ret[key_method]["EM"]     += solveWithEM    (list[i], community[i], numberClasses, key_method)
 
