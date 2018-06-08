@@ -1,0 +1,72 @@
+./C10F10N2Ne100A0.373056391827R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C10F10N2Ne100A0.373056391827R9_1.arff 0.213378 0.013801 0.791629 0.021798
+./C10F10N2Ne100A0.746112783654R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C10F10N2Ne100A0.746112783654R9_1.arff 0.336727 0.023132 0.828588 0.015268
+./C10F2N2Ne50A2.31863882985R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C10F2N2Ne50A2.31863882985R9_1.arff 0.425978 0.008040 0.838186 0.011241
+./C10F2N2Ne50A4.63727765969R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C10F2N2Ne50A4.63727765969R9_1.arff 0.745086 0.015933 0.913546 0.006876
+./C10F2N2Ne5A2.78342142966R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C10F2N2Ne5A2.78342142966R9_1.arff 0.609989 0.015428 0.857102 0.014022
+./C10F2N2Ne5A5.56684285932R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C10F2N2Ne5A5.56684285932R9_1.arff 0.782160 0.005962 0.921469 0.000490
+./C10F50N2Ne50A0.0720546027497R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C10F50N2Ne50A0.0720546027497R9_1.arff 0.273897 0.024482 0.774221 0.017202
+./C10F50N2Ne50A0.144109205499R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C10F50N2Ne50A0.144109205499R9_1.arff 0.304179 0.020633 0.770991 0.020464
+./C10F50N2Ne50A0.216163808249R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C10F50N2Ne50A0.216163808249R9_1.arff 0.293118 0.024765 0.775162 0.023584
+./C10F50N2Ne5A0.645374900663R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C10F50N2Ne5A0.645374900663R9_1.arff 0.533544 0.029000 0.775796 0.046772
+./C10F50N2Ne5A1.29074980133R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C10F50N2Ne5A1.29074980133R9_1.arff 0.816484 0.036750 0.932898 0.017962
+./C2F10N2Ne100A0.05R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C2F10N2Ne100A0.05R9_1.arff 0.009750 0.000819 0.504261 0.000566
+./C2F10N2Ne100A0.15R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C2F10N2Ne100A0.15R9_1.arff 0.012718 0.000851 0.506726 0.000675
+./C2F10N2Ne50A0.216163808249R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C2F10N2Ne50A0.216163808249R9_1.arff 0.002669 0.000000 0.496768 0.000000
+./C2F10N2Ne5A0.05R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C2F10N2Ne5A0.05R9_1.arff 0.009263 0.016043 0.446667 0.006667
+./C2F10N2Ne5A0.15R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C2F10N2Ne5A0.15R9_1.arff 0.274637 0.000000 0.530000 0.014530
+./C2F10N2Ne5A0.1R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C2F10N2Ne5A0.1R9_1.arff 0.147082 0.000000 0.466667 0.000000
+./C2F50N2Ne100A0.0600227468339R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C2F50N2Ne100A0.0600227468339R9_1.arff 0.000195 0.000124 0.497618 0.000078
+./C2F50N2Ne100A0.120045493668R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C2F50N2Ne100A0.120045493668R9_1.arff 0.018660 0.016485 0.507714 0.010708
+./C2F50N2Ne100A0.180068240502R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C2F50N2Ne100A0.180068240502R9_1.arff 0.001816 0.000000 0.498744 0.000000
+./C2F50N2Ne50A0.0600227468339R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C2F50N2Ne50A0.0600227468339R9_1.arff 0.010665 0.014310 0.498939 0.003585
+./C2F50N2Ne50A0.120045493668R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C2F50N2Ne50A0.120045493668R9_1.arff 0.024850 0.003967 0.512505 0.002377
+./C2F50N2Ne50A0.180068240502R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C2F50N2Ne50A0.180068240502R9_1.arff 0.004999 0.001430 0.497788 0.001970
+./C50F2N2Ne5A24.9905257444R0_1.arff
+File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)
+./C50F2N2Ne5A24.9905257444R9_1.arff 0.929801 0.004038 0.989669 0.000577

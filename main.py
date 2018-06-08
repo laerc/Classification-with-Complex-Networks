@@ -13,39 +13,90 @@ from matplotlib.ticker import MaxNLocator
 
 
 
-def EvaluateKMeans(files, methods):
+def EvaluateKMeans(files):
     numFiles = 0
 
-    kmeans = []
+    kmeans = {'nmi' : 0, 'rand' : 0}
     dataList = []
     communityList = []
+    numberClasses = 0
 
-    print ("File name              NMI     Rand Index")
-
-    for i in range(len(methods)):
-        kmeans.append(0.0)
+    #print ("File name              NMI     Rand Index")
 
     for file in files:
-        
         numFiles += 1
         y,x = parseData(file)
 
         #remove the last colugnm
         for i in range(len(y)):
+            numberClasses = int(x[i][-1])+1
             x[i].pop()
         
         dataList.append(x)
         communityList.append(y)
         # This means that we got all the files with the same parameters, but different values
         if(numFiles == 10):
-
-            kmeans = solveIAMethods(dataList,communityList,methods)
-
-            print ("%s %f %f" % (file, kmeans[0]/len(dataList), kmeans[1]/len(dataList))) 
-            numFiles = 10
+            for i in range(len(dataList)):
+                kmeans['nmi']  += solveWithKMeans(dataList[i],communityList[i],numberClasses,"nmi")
+                kmeans['rand'] += solveWithKMeans(dataList[i],communityList[i],numberClasses,"rand")
+            kmeans['nmi'] /=10.0
+            kmeans['rand']/=10.0
+            return (kmeans)
+            #print ("%s %f %f" % (file, kmeans[0]/len(dataList), kmeans[1]/len(dataList))) 
+            numFiles = 0
             dataList = []
             communityList = []
             numFiles = 0
+
+def EvaluateEM(files):
+    numFiles = 0
+
+    dataList = []
+    communityList = []
+    numberClasses = 0
+
+    #print ("File name                             NMI     DP(NMI)  Rand Index  DP(Rand Index)")
+
+    for file in files:
+        numFiles += 1
+        y,x = parseData(file)
+
+        #remove the last colugnm
+        for i in range(len(y)):
+            numberClasses = int(x[i][-1]+1)
+            x[i].pop()
+        
+        dataList.append(x)
+        communityList.append(y)
+
+        if(numFiles == 10):
+            EM = {'nmi' : [], 'rand' : []}
+            em_nmi_v  = []
+            em_rand_v = []
+            
+            for j in range(len(dataList)):
+                EM['nmi'].append(0)
+                EM['rand'].append(0)
+                
+                for i in range(20):
+                    em_nmi  = solveWithEM(dataList[j],communityList[j],numberClasses,'nmi')
+                    em_rand = solveWithEM(dataList[j],communityList[j],numberClasses,'rand')
+                    EM['nmi'][j]  += em_nmi
+                    EM['rand'][j] += em_rand
+
+                em_nmi_v.append(EM['nmi'][j]/20.0)
+                em_rand_v.append(EM['rand'][j]/20.0)
+
+            numFiles = 0
+            communityList = []
+            numFiles = 0
+            #print ("%s %f %f %f %f" % (file, EM['nmi'][j]/(20.0), np.std(em_nmi_v, dtype=np.float64),EM['rand'][j]/(20.0), np.std(em_rand_v, dtype=np.float64))) 
+            return { 'nmi' : sum(em_nmi_v)/len(dataList), 'nmi_dp'  : np.std(em_nmi_v, dtype=np.float64),
+                     'rand': sum(em_rand_v)/len(dataList), 'rand_dp': np.std(em_rand_v, dtype=np.float64) }
+            
+            dataList = []
+            
+            
 
 def plotPoints():
     list = []
@@ -112,17 +163,17 @@ def plotPoints():
 def findBestRank(best_performance):
     rank = {}
     methods = [ 'edgeBetweeness', 'fastGreedy', 'labelPropag', 'leadingEigen','multilevel', 
-                'walktrap', 'infoMap']
+                'walktrap', 'infoMap', 'EM', 'kmeans']
 
     for method in methods:
         kmax = 0
-        max_val = 0.0
+        max_val = -1.0
         
         for key, val in best_performance.items():
             if(sum(val[method]) > max_val):
                 kmax = key
                 max_val = sum(val[method])
-
+        #print (method, max_val, best_performance[kmax][method][0])
         rank[method] = 0.0
 
         for i in range(len(best_performance[kmax][method])):
@@ -136,6 +187,7 @@ def findBestRank(best_performance):
             rank[method] += cur_rank
         #print method
         rank[method] /= len(best_performance[kmax][method])*1.0
+        #print(method, rank[method])
 
     return rank
 
@@ -151,6 +203,7 @@ def plotRank(ranks, method):
     color['multilevel'] = "orange"
     color['walktrap'] = "black"
     color['infoMap'] = "grey"
+    color['EM'] = 'brown'
 
     label['edgeBetweeness'] = "Edge Betweenness"
     label['fastGreedy'] = "Fast Greedy"
@@ -159,10 +212,11 @@ def plotRank(ranks, method):
     label['multilevel'] = "Multilevel"
     label['walktrap'] = "Walktrap"
     label['infoMap'] = "Infomap"
+    label['EM'] = "Expectation Maximization"
     
     plt.style.use('fivethirtyeight')
-    print ("Debug message : ")
-    print (ranks)
+    #print ("Debug message : ")
+    #print (ranks)
 
     #for key, value in ranks.items():
     colors = [value for key, value in color.items()]
@@ -180,23 +234,26 @@ def plotRank(ranks, method):
     patch = [mpatches.Patch(color='blue',   label="Edge Betweenness"),  mpatches.Patch(color='red', label="Fast Greedy"),
              mpatches.Patch(color='green',  label="Label Propagation"), mpatches.Patch(color='purple', label="Leading Eigenvector"),
              mpatches.Patch(color='orange', label="Multilevel"),        mpatches.Patch(color='black', label="Walktrap"),
-             mpatches.Patch(color='grey',   label="Infomap")] 
+             mpatches.Patch(color='grey',   label="Infomap"),           mpatches.Patch(color='brown',   label="EM")] 
     
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.5),handles=patch)
 
     plt.show()
 
-def main(files):
+def main(files, kmeans_eval, em_eval):
 
     data = []
     best_performance_nmi = {}
     best_performance_rand = {}
+    bests_perform = {"nmi" : {}, "rand" : {}}
+    bests_perform["nmi"]  = {"before" : [], "after" : []}
+    bests_perform["rand"] = {"before" : [], "after" : []}
+
     label = {}
     color = {}
     entries = {}
     x = []
     y = {}
-    kmeans = 0.0
 
     maxk = 17
     method = "rand"
@@ -269,15 +326,29 @@ def main(files):
             # use rand for rand index and nmi for nmi clustering evaluation
             cur_val_nmi = 0.0
             cur_val_rand = 0.0
-
-            ai_methods = solveIAMethods(connectedLists, communities, methods=['nmi', 'rand'])
-            ret = solveGraphs(entries, connectedGraphs, communities, metric_method=method)
-
+            
+            #ai_methods = solveIAMethods(connectedLists, communities, methods=['nmi', 'rand'])
+            #ret = solveGraphs(entries, connectedGraphs, communities, metric_method=method)
+            '''
             for key_method, value_method in ai_methods.items():
                 for key_algo, value_algo in value_method.items():
                     y[key_method][key_algo].append(value_algo/len(connectedLists))
+            '''
+            
+            
+            ret, before_and_after = solveWithConsensus(connectedGraphs, communities, method, tol, np)
+            
+            bests_perform["nmi"]["before"].append(sum(before_and_after["nmi"]["before"])/len(connectedGraphs)*1.0)
+            bests_perform["rand"]["before"].append(sum(before_and_after["rand"]["before"])/len(connectedGraphs)*1.0)
+            bests_perform["nmi"]["after"].append(sum(before_and_after["nmi"]["after"])/len(connectedGraphs)*1.0)
+            bests_perform["rand"]["after"].append(sum(before_and_after["rand"]["after"])/len(connectedGraphs)*1.0)
+            
 
-            #ret_consensus = solveWithConsensus(connectedGraphs, communities, method, tol, np)
+            ret['nmi'].update ({'EM' : [em_eval['nmi'] for ii in range(len(connectedGraphs))]})
+            ret['rand'].update({'EM' : [em_eval['rand'] for ii in range(len(connectedGraphs))]})
+
+            ret['nmi']['kmeans']  = [kmeans_eval['nmi']  for ii in range(len(connectedGraphs))]
+            ret['rand']['kmeans'] = [kmeans_eval['rand'] for ii in range(len(connectedGraphs))]
             
             '''print "\n--------------------------------------------------------\n"
             
@@ -288,15 +359,27 @@ def main(files):
 
             best_performance_nmi.update({k : ret['nmi']})
             best_performance_rand.update({k : ret['rand']})
-
+            
             for key, value in ret['nmi'].items():
-                y['nmi'][key].append(sum(value)/len(connectedGraphs)*1.0)
-                cur_val_nmi = max(cur_val_nmi, sum(value)/len(connectedGraphs)*1.0)
+                if(key != 'kmeans' and key != 'EM'):
+                    y['nmi'][key].append(sum(value)/len(connectedGraphs)*1.0)
+                    cur_val_nmi = max(cur_val_nmi, sum(value)/len(connectedGraphs)*1.0)
+                else:
+                    if(key == 'EM'):
+                        y['nmi'][key].append(em_eval['nmi'])
+                    else:
+                        y['nmi'][key].append(kmeans_eval['nmi'])
 
             for key, value in ret['rand'].items():
-                y['rand'][key].append(sum(value)/len(connectedGraphs)*1.0)
-                cur_val_rand = max(cur_val_rand, sum(value)/len(connectedGraphs)*1.0)
-
+                if(key != 'kmeans' and key != 'EM'):
+                    y['rand'][key].append(sum(value)/len(connectedGraphs)*1.0)
+                    cur_val_rand = max(cur_val_rand, sum(value)/len(connectedGraphs)*1.0)
+                else:
+                    if(key == 'EM'):
+                        y['rand'][key].append(em_eval['rand'])
+                    else:
+                        y['rand'][key].append(kmeans_eval['rand'])
+            
             x.append(k)
 
             if(cur_val_nmi < maxi_eval_nmi and cur_val_rand < maxi_eval_rand and k >= 10):
@@ -304,29 +387,19 @@ def main(files):
             maxi_eval_nmi = max(maxi_eval_nmi,cur_val_nmi)
             maxi_eval_rand = max(maxi_eval_rand,cur_val_rand)
 
-
+    #print(best_performance_nmi)
     ranks = findBestRank(best_performance_nmi)
-    '''plotRank(ranks, "NMI")'''
+    #plotRank(ranks, "NMI")
     #print ("NMI")
     print ("nmi")
     print (ranks)
-    
     ranks = findBestRank(best_performance_rand)
     print ("rand")
     print (ranks)
-
     print (x)
     print (y)
+    print (bests_perform)
     #plotRank(ranks, "Rand Index")
-    '''print ("Rand Index")
-    print (ranks)
-    print "\n"
-    print x
-    print "\n"    
-    print y
-    print "\n"
-    print "------------------------------------------------------\n\n"
-    '''
     '''
     plt.style.use('fivethirtyeight')
 
@@ -351,12 +424,15 @@ def main(files):
     plt.show()
     '''
 
-def plot(ranks_nmi, ranks_rand, x, y):
-    plt.style.use('fivethirtyeight')
+def plot(rank_nmi, rank_rand, x, y):
     #plt.gca().xaxis.set_major_locator(MaxNLocator(prune='lower'))
 
     color = {}
     label = {}
+    names = []
+    avranks_nmi = []
+    avranks_rand = []
+    
     color['edgeBetweeness'] = "blue"
     color['fastGreedy'] = "red"
     color['labelPropag'] = "green"
@@ -377,32 +453,46 @@ def plot(ranks_nmi, ranks_rand, x, y):
     label['kmeans'] = "K-Means"
     label['EM'] = "Expectation-Maximization"
 
-    plt.xticks(rotation=45)
-    plotRank(ranks_nmi , "NMI")
-    plt.xticks(rotation=45)
-    plotRank(ranks_rand, "Rand Index")
-    
+    for key,val in label.items():
+        names.append(val)
+        avranks_nmi.append(rank_nmi[key])
+        avranks_rand.append(rank_rand[key])
 
+    cd = Orange.evaluation.compute_CD(avranks_nmi, 10) #tested on 30 datasets
+    Orange.evaluation.graph_ranks(avranks_nmi, names, cd=cd, width=6, textspace=1.2)
+    plt.show()
+
+    cd = Orange.evaluation.compute_CD(avranks_rand, 10) #tested on 30 datasets
+    Orange.evaluation.graph_ranks(avranks_rand, names, cd=cd, width=6, textspace=1.2)
+    plt.show()
+    
     plt.style.use('fivethirtyeight')
 
     for key, val in y['nmi'].items():
-        plt.plot(x,val,label=label[key],color=color[key])
+        if(key == 'EM' or key == 'kmeans'):
+            plt.plot(x,val,label=label[key],color=color[key], dashes=[5, 3])
+        else:
+            plt.plot(x,val,label=label[key],color=color[key])
 
     plt.xlabel("k")
     plt.ylabel("NMI(k)")
     plt.ylim(ymax=1.0)
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    plt.tight_layout(rect=[0,0,0.75,1])
+    plt.tight_layout(rect=[0.00,0.00,1.3,1])
+    
     plt.show()
 
     for key, val in y['rand'].items():
-        plt.plot(x,val,label=label[key],color=color[key])
+        if(key == 'EM' or key == 'kmeans'):
+            plt.plot(x,val,label=label[key],color=color[key], dashes=[5, 3])
+        else:
+            plt.plot(x,val,label=label[key],color=color[key])
 
     plt.xlabel("k")
     plt.ylabel("Rand Index(k)")
     plt.ylim(ymax=1.0)
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    plt.tight_layout(rect=[0,0,0.75,1])
+    plt.tight_layout(rect=[0.00,0.00,1.3,1])
     plt.show()
 
 '''
@@ -425,12 +515,38 @@ for i in range(0,len(files),10):
         cur_files.append(files[j])
     
     print (cur_files[0])
-    main(cur_files)
+    em_eval     = EvaluateEM(cur_files)
+    kmeans_eval = EvaluateKMeans(cur_files)
+    main(cur_files, kmeans_eval, em_eval)
+    print ("---------------------------------------------------------------------------------------------------")
+
 
 '''
-names = ["first", "third", "second", "fourth" ]
-avranks =  [1.9, 3.2, 2.8, 3.3 ]
-cd = Orange.evaluation.compute_CD(avranks, 30) #tested on 30 datasets
-Orange.evaluation.graph_ranks(avranks, names, cd=cd, width=6, textspace=1.5)
-plt.show()
+from glob import *
+from ast import literal_eval
+
+
+fp = open("tmp_file", "r")
+
+ok = False
+list = []
+
+for line in fp:
+    if line.startswith("---------"):
+        file_name = (list[0])
+        rank_nmi  = literal_eval(list[2])
+        rank_rand = literal_eval(list[4])
+        x = literal_eval(list[5])
+        y = literal_eval(list[6])
+
+        print (file_name)
+        print (rank_nmi)
+        print (rank_rand)
+        print (x)
+        print (y)
+        plot(rank_nmi, rank_rand, x, y)
+        list = []
+    else:
+        line = line.replace('\n', '')
+        list.append(line)
 '''

@@ -211,7 +211,7 @@ def solveGraphs(entries, graphs, community, metric_method):
 
 def createConsensusGraphsWeighted(clusters, size, threshold, np):
     
-    seen_before = Set()
+    seen_before = set()
     adj_mat = [[0 for ii in range(size)] for jj in range(size)]
     
     #print adj_mat
@@ -248,38 +248,51 @@ def createConsensusGraphsWeighted(clusters, size, threshold, np):
 
 def solveWithConsensus(graphs, communities, metric_method, threshold, np):
     numberClasses = communities[-1][-1]+1
-    result = 0.0    
+    results = {"nmi" : {}, "rand" : {}}   
     best_result = {"nmi" : {}, "rand" : {}}
-    
-    best_result["nmi"] = ({'edgeBetweeness' : 0.0, 'fastGreedy' : 0.0, 'labelPropag' : 0.0, 'leadingEigen' : 0.0,
-            'multilevel' : 0.0, 'walktrap' : 0.0, 'infoMap' : 0.0})
 
-    best_result["rand"] = ({'edgeBetweeness' : 0.0, 'fastGreedy' : 0.0, 'labelPropag' : 0.0, 'leadingEigen' : 0.0,
-            'multilevel' : 0.0, 'walktrap' : 0.0, 'infoMap' : 0.0})
+    results["nmi"]  = ({'before' : [], 'after' : []})
+
+    results["rand"] = ({'before' : [], 'after' : []})
+
+    best_result["nmi"] = ({'edgeBetweeness' : [], 'fastGreedy' : [], 'labelPropag' : [], 
+        'leadingEigen' : [], 'multilevel' : [], 'walktrap' : [], 'infoMap' : []})
+
+    best_result["rand"] = ({'edgeBetweeness' : [], 'fastGreedy' : [], 'labelPropag' : [], 
+        'leadingEigen' : [], 'multilevel' : [], 'walktrap' : [], 'infoMap' : []})
 
     for i in range(len(graphs)):
         ok = False
-        
+        after_maxi_nmi = 0.0
+        after_maxi_rand = 0.0
+        before_maxi_nmi = 0.0
+        before_maxi_rand = 0.0
+        cur_result = {"nmi" : {}, "rand" : {}}
+        cur_result["nmi"] = ({'edgeBetweeness' : [0.0, 0], 'fastGreedy' : [0.0, 0], 'labelPropag' : [0.0, 0], 
+            'leadingEigen' : [0.0, 0], 'multilevel' : [0.0, 0], 'walktrap' : [0.0, 0], 'infoMap' : [0.0, 0]})
+
+        cur_result["rand"] = ({'edgeBetweeness' : [0.0, 0], 'fastGreedy' : [0.0, 0], 'labelPropag' : [0.0, 0], 
+            'leadingEigen' : [0.0, 0], 'multilevel' : [0.0, 0], 'walktrap' : [0.0, 0], 'infoMap' : [0.0, 0]})
+
         k = 0
         j = 0
 
         graphs[i].es["weight"] = 1.0
         
-        while(ok == False):
+        while(ok == False and j < 10):
             ok = True
             ret = []    
             j+=1
-            if (j == 100):
-                break
+
             ret.append({'edgeBetweeness' : [], 'fastGreedy' : [], 'labelPropag' : [], 'leadingEigen' : [],
             'multilevel' : [], 'walktrap' : [], 'infoMap' : []})
             # usa o metodo de (label propagation method of Raghavan et al)
             
             labelPropag = graphs[i].community_label_propagation(weights="weight").membership
-            #ret[k]['labelPropag'].append(labelPropag)
+            ret[k]['labelPropag'].append(labelPropag)
             
             #Newman's leading eigenvector
-            leadingEigen = graphs[i].community_leading_eigenvector(weights="weight",clusters=numberClasses).membership
+            #leadingEigen = graphs[i].community_leading_eigenvector(weights="weight",clusters=numberClasses).membership
             #ret[k]['leadingEigen'].append(leadingEigen)
             
             #baseado no algoritmo de Blondel et al.
@@ -295,19 +308,30 @@ def solveWithConsensus(graphs, communities, metric_method, threshold, np):
             ret[k]['infoMap'].append(infoMap)
 
             #vai recalculando o betweenness, e as arestas de maior betweenness sao tiradas
-            edgeBetweeness = graphs[i].community_edge_betweenness(weights="weight",clusters=numberClasses).as_clustering(numberClasses).membership
-            ret[k]['edgeBetweeness'].append(edgeBetweeness)
+            #edgeBetweeness = graphs[i].community_edge_betweenness(weights="weight",clusters=numberClasses).as_clustering(numberClasses).membership
+            #ret[k]['edgeBetweeness'].append(edgeBetweeness)
 
             #vai aglomerando as comunidades ate que nao aumenta a modularidade
             fastGreedy = graphs[i].community_fastgreedy(weights="weight").as_clustering(numberClasses).membership
-            #ret[k]['fastGreedy'].append(fastGreedy)
+            ret[k]['fastGreedy'].append(fastGreedy)
 
             for key_j, val_j in ret[k].items():
                 if(len(val_j) == 0):
                     continue
                 #print val_j[0], communities[i], best_result["nmi"][key_j], key_j
-                best_result["nmi"][key_j]  = max(best_result["nmi"][key_j], compare_communities(communities[i], val_j[0], method="nmi"))
-                best_result["rand"][key_j] = max(best_result["rand"][key_j], compare_communities(communities[i], val_j[0], method="rand"))
+                comp_commum_nmi  = compare_communities(communities[i], val_j[0], method="nmi")
+                comp_commum_rand = compare_communities(communities[i], val_j[0], method="rand")
+                if(j == 1):
+                    before_maxi_nmi = max(before_maxi_nmi, comp_commum_nmi)
+                    before_maxi_rand = max(before_maxi_rand, comp_commum_rand)
+
+                if cur_result["nmi"][key_j][0] < comp_commum_nmi:
+                    cur_result["nmi"][key_j][0] = comp_commum_nmi
+                    cur_result["nmi"][key_j][1] = j
+                
+                if cur_result["rand"][key_j][0] < comp_commum_rand:
+                    cur_result["rand"][key_j][0] = comp_commum_rand
+                    cur_result["rand"][key_j][1] = j
 
             for key_i, val_i in ret[k].items():
                 for key_j, val_j in ret[k].items():
@@ -327,17 +351,32 @@ def solveWithConsensus(graphs, communities, metric_method, threshold, np):
                 #print adj_mat
             #They are all equal
             else:
-                result += compare_communities(ret[k]['walktrap'][0], communities[i], method = metric_method)
-            
+                break
+
+        for key_j, val_j in cur_result["nmi"].items():
+            #print (key_j, val_j)
+            after_maxi_nmi = max(after_maxi_nmi, val_j[0])
+            best_result["nmi"][key_j].append(val_j[0])
+
+
+        for key_j, val_j in cur_result["rand"].items():
+            after_maxi_rand = max(after_maxi_nmi,val_j[0])
+            best_result["rand"][key_j].append(val_j[0])
+
+        #print ("best result after")
+        results['nmi']['before'].append(before_maxi_nmi)
+        results['nmi']['after'].append(after_maxi_nmi)
+        results['rand']['before'].append(before_maxi_rand)
+        results['rand']['after'].append(after_maxi_rand)
+        #print (before_maxi_nmi, after_maxi_nmi, before_maxi_rand, after_maxi_rand)
+        #print ("-----------------------------------------------------------------------")
             #print graphs[i].es["weight"]
             #layout = graphs[i].layout("kk")
             #plot(graphs[i], layout = layout)
             #return
         #print j
 
-    print (best_result)
-
-    return result/len(graphs)*1.0
+    return best_result, results
 
 def createConsensusGraphs(clusters, threshold, np):
     D = {}
