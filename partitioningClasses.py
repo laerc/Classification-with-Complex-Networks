@@ -550,7 +550,8 @@ def solveWithKMeans(list, community, numberClasses, method):
     
     solve = KMeans(n_clusters = numberClasses, random_state = 0).fit(list)
     kmeansTmp = compare_communities(solve.labels_,community,method = method)
-    
+    print(np.asarray(solve.labels_))
+    print("\n")
     return kmeansTmp
 
 def solveWithEM(list, community, numberClasses, method):

@@ -37,8 +37,8 @@ def EvaluateKMeans(files):
         # This means that we got all the files with the same parameters, but different values
         if(numFiles == 10):
             for i in range(len(dataList)):
-                kmeans['nmi']  += solveWithKMeans(dataList[i],communityList[i],numberClasses,"nmi")
-                kmeans['rand'] += solveWithKMeans(dataList[i],communityList[i],numberClasses,"rand")
+                kmeans['nmi']  += solveWithKMeans(dataList[i],np.asarray(communityList[i]),numberClasses,"nmi")
+                kmeans['rand'] += solveWithKMeans(dataList[i],np.asarray(communityList[i]),numberClasses,"rand")
             kmeans['nmi'] /=10.0
             kmeans['rand']/=10.0
             return (kmeans)
@@ -282,13 +282,13 @@ def main(files, kmeans_eval, em_eval):
     label['kmeans'] = "K-Means"
     label['EM'] = "Expectation-Maximization"
 
-    entries['edgeBetweeness'] = True
+    entries['edgeBetweeness'] = False
     entries['fastGreedy'] = True
-    entries['labelPropag'] = True
-    entries['leadingEigen'] = True
+    entries['labelPropag'] = False
+    entries['leadingEigen'] = False
     entries['multilevel'] = True
     entries['walktrap'] = True
-    entries['infoMap'] = True
+    entries['infoMap'] = False
     entries['kmeans'] = True
     entries['EM'] = True
     y = {}
@@ -335,7 +335,7 @@ def main(files, kmeans_eval, em_eval):
                     y[key_method][key_algo].append(value_algo/len(connectedLists))
             '''
             
-            
+            '''
             ret, before_and_after = solveWithConsensus(connectedGraphs, communities, method, tol, np)
             
             bests_perform["nmi"]["before"].append(sum(before_and_after["nmi"]["before"])/len(connectedGraphs)*1.0)
@@ -349,18 +349,25 @@ def main(files, kmeans_eval, em_eval):
 
             ret['nmi']['kmeans']  = [kmeans_eval['nmi']  for ii in range(len(connectedGraphs))]
             ret['rand']['kmeans'] = [kmeans_eval['rand'] for ii in range(len(connectedGraphs))]
-            
-            '''print "\n--------------------------------------------------------\n"
-            
-            print k 
-            ret_consensus = solveWithConsensus(connectedGraphs, communities, method, tol, np)
-            print "\n--------------------------------------------------------\n"
             '''
+            #print ("\n--------------------------------------------------------\n")
+            
+            print (k) 
+            ret = solveWithConsensus(connectedGraphs, communities, method, tol, np)[0]
+
+            ret['nmi'].update ({'EM' : [em_eval['nmi'] for ii in range(len(connectedGraphs))]})
+            ret['rand'].update({'EM' : [em_eval['rand'] for ii in range(len(connectedGraphs))]})
+
+            ret['nmi']['kmeans']  = [kmeans_eval['nmi']  for ii in range(len(connectedGraphs))]
+            ret['rand']['kmeans'] = [kmeans_eval['rand'] for ii in range(len(connectedGraphs))]
+
+            #print ("\n--------------------------------------------------------\n")
+            
 
             best_performance_nmi.update({k : ret['nmi']})
             best_performance_rand.update({k : ret['rand']})
             
-            for key, value in ret['nmi'].items():
+            for key, value in ret["nmi"].items():
                 if(key != 'kmeans' and key != 'EM'):
                     y['nmi'][key].append(sum(value)/len(connectedGraphs)*1.0)
                     cur_val_nmi = max(cur_val_nmi, sum(value)/len(connectedGraphs)*1.0)
@@ -425,7 +432,6 @@ def main(files, kmeans_eval, em_eval):
     '''
 
 def plot(rank_nmi, rank_rand, x, y):
-    #plt.gca().xaxis.set_major_locator(MaxNLocator(prune='lower'))
 
     color = {}
     label = {}
@@ -469,6 +475,8 @@ def plot(rank_nmi, rank_rand, x, y):
     plt.style.use('fivethirtyeight')
 
     for key, val in y['nmi'].items():
+        if(key not in label):
+            continue
         if(key == 'EM' or key == 'kmeans'):
             plt.plot(x,val,label=label[key],color=color[key], dashes=[5, 3])
         else:
@@ -524,7 +532,6 @@ for i in range(0,len(files),10):
 '''
 from glob import *
 from ast import literal_eval
-
 
 fp = open("tmp_file", "r")
 
