@@ -110,6 +110,9 @@ def createGraph(fileName, k):
     
     return [graph,list]
 
+'''
+Funcao Testa se os grafos passados por parâmetros possuem somente uma componente conexa
+'''
 def testGraphs(graphs):
     
     connectedGraphs = []
@@ -198,6 +201,7 @@ def solveGraphs(entries, graphs, community, metric_method):
             ret['nmi']['infoMap'].append(infoMap_nmi)
             ret['rand']['infoMap'].append(infoMap_rand)  
 
+        # tutorial to plot a graph
         #layout = graphs[i].layout("kk")
         #plot(graphs[i], mark_groups = True, layout=layout)
         #plot(graphs[i].community_fastgreedy().as_clustering(numberClasses), mark_groups = True, layout=layout)
@@ -213,8 +217,6 @@ def createConsensusGraphsWeighted(clusters, size, threshold, np):
     
     seen_before = set()
     adj_mat = [[0 for ii in range(size)] for jj in range(size)]
-    
-    #print adj_mat
 
     for key_i, val_i in clusters.items():
         seen_before.add(key_i)
@@ -230,20 +232,6 @@ def createConsensusGraphsWeighted(clusters, size, threshold, np):
                     
                     if val_i[0][i] == val_j[0][j]:
                         adj_mat[i][j] += 1
-
-    #create a new graph
-    #graph = Graph.Weighted_Adjacency(adj_mat,attr="weight",mode=ADJ_UNDIRECTED)
-    #graph.add_vertices(size)
-    #graph.es["weight"] = 1.0
-
-    #for i in range(size):
-    #    for j in range(i+1,size):
-    #        if(adj_mat[i][j] >= threshold*size):
-    #            graph.add_edge(i,j,weight=adj_mat[i][j])
-                #print (graph[i,j])
-
-    #print size
-    #graph.simplify()
     return adj_mat
 
 def solveWithConsensus(graphs, communities, metric_method, threshold, np):
@@ -348,33 +336,22 @@ def solveWithConsensus(graphs, communities, metric_method, threshold, np):
             if(ok == False):
                 adj_mat = createConsensusGraphsWeighted(ret[k], len(communities[i]), threshold, np)
                 graphs[i] = Graph.Weighted_Adjacency(adj_mat,mode=ADJ_UNDIRECTED)
-                #print adj_mat
             #They are all equal
             else:
                 break
 
         for key_j, val_j in cur_result["nmi"].items():
-            #print (key_j, val_j)
             after_maxi_nmi = max(after_maxi_nmi, val_j[0])
             best_result["nmi"][key_j].append(val_j[0])
-
 
         for key_j, val_j in cur_result["rand"].items():
             after_maxi_rand = max(after_maxi_nmi,val_j[0])
             best_result["rand"][key_j].append(val_j[0])
 
-        #print ("best result after")
         results['nmi']['before'].append(before_maxi_nmi)
         results['nmi']['after'].append(after_maxi_nmi)
         results['rand']['before'].append(before_maxi_rand)
         results['rand']['after'].append(after_maxi_rand)
-        #print (before_maxi_nmi, after_maxi_nmi, before_maxi_rand, after_maxi_rand)
-        #print ("-----------------------------------------------------------------------")
-            #print graphs[i].es["weight"]
-            #layout = graphs[i].layout("kk")
-            #plot(graphs[i], layout = layout)
-            #return
-        #print j
 
     return best_result, results
 
@@ -396,24 +373,6 @@ def createConsensusGraphs(clusters, threshold, np):
         graphs[key] = Graph.Weighted_Adjacency(D[key],mode=ADJ_UNDIRECTED)
 
     return graphs
-'''
-    for key, val in cluster.items():
-        graph = Graph()
-        graph.add_vertices(val[0])
-
-        for i in range(len(D[key])):
-            for j in range(len(D[key][i])):
-                if(D[key][i][j] < threshold*np):
-                    D[key][i][j] = 0
-                else:
-                    D[key][i][j] = 1
-                    graph.add_edge(i,j)
-                    graph.add_edge(j,i)
-
-        graph.simplify()
-        #graphs[key] = Graph.Adjacency(D[key])
-        graphs[key] = graph
-'''     
 
 def createMatrixConsensuns(entries, graphs, np, threshold, numberClasses):
     ret = []
@@ -550,8 +509,6 @@ def solveWithKMeans(list, community, numberClasses, method):
     
     solve = KMeans(n_clusters = numberClasses, random_state = 0).fit(list)
     kmeansTmp = compare_communities(solve.labels_,community,method = method)
-    print(np.asarray(solve.labels_))
-    print("\n")
     return kmeansTmp
 
 def solveWithEM(list, community, numberClasses, method):
