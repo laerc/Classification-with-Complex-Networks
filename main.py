@@ -7,6 +7,8 @@ import matplotlib.patches as mpatches
 
 from glob import *
 from igraph import *
+
+from aimethods import *
 from aievaluations import *
 from partitioningClasses import *
 
@@ -289,5 +291,5 @@ def parse_to_plot(file_name):
             line = line.replace('\n', '')
             list.append(line)
 
-#solve()
-parse_to_plot("tmp")
+solve()
+#parse_to_plot("tmp")
